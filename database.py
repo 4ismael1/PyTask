@@ -68,7 +68,7 @@ class SettingsDatabase:
         conn.close()
     
     def get_all_settings(self):
-        """Obtiene todas las configuraciones como diccionario"""
+        """Obtiene todas las configuraciones como diccionario - OPTIMIZADO"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -78,13 +78,21 @@ class SettingsDatabase:
         
         settings = {}
         for key, value in rows:
-            # Convertir strings a tipos apropiados
-            if value.lower() == 'true':
+            # Convertir strings a tipos apropiados (optimizado)
+            value_lower = value.lower()
+            if value_lower == 'true':
                 settings[key] = True
-            elif value.lower() == 'false':
+            elif value_lower == 'false':
                 settings[key] = False
             else:
-                settings[key] = value
+                # Intentar convertir a número si es posible
+                try:
+                    if '.' in value:
+                        settings[key] = float(value)
+                    else:
+                        settings[key] = int(value)
+                except ValueError:
+                    settings[key] = value
         
         return settings
     

@@ -3,13 +3,14 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QHBoxLayout,
                              QMenu, QToolButton, QInputDialog, QFileDialog)
 from PyQt6.QtCore import Qt, QTimer, QSize, pyqtSignal
 from PyQt6.QtGui import QAction, QIcon
-import keyboard
-import threading
+# OPTIMIZACIÓN: Lazy imports - keyboard y threading se cargan cuando se necesiten
+# import keyboard  # Se carga en setup_global_hotkeys()
+# import threading  # Se carga en play_macro()
 import json
 from pathlib import Path
 import ctypes
 
-from macro_recorder import MacroRecorder, MacroPlayer
+from macro_recorder import MacroRecorder, MacroPlayer, MacroPlayerWindows
 from database import SettingsDatabase
 
 
@@ -20,7 +21,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.recorder = MacroRecorder()
-        self.player = MacroPlayer()
+        # Player se inicializará después de cargar preferencias
+        self.player = None
         
         # Inicializar base de datos de configuración en AppData
         self.db = SettingsDatabase()  # Usa AppData/Roaming/PyTask por defecto
@@ -38,6 +40,15 @@ class MainWindow(QMainWindow):
         self.interval_mode = False
         self.interval_seconds = 5
         
+        # Cache para menús (optimización)
+        self._play_menu_cache = None
+        self._prefs_menu_cache = None
+        self._menu_needs_update = True
+        
+        # Cache para iconos (optimización - evita cargar desde disco)
+        self._icon_cache = {}
+        self._icon_path = Path(__file__).parent / "img"
+        
         # Configuración por defecto
         self.settings = {
             'speed_half': True,
@@ -47,21 +58,31 @@ class MainWindow(QMainWindow):
             'record_hotkey': 'f9',
             'play_hotkey': 'f10',
             'always_on_top': False,
-            'show_captions': True
+            'show_captions': True,
+            'use_sendinput': True  # Usar Windows SendInput (mejor compatibilidad con juegos)
         }
         self.load_preferences()
         
         self.init_ui()
         self.setup_global_hotkeys()
     
+    def get_icon(self, icon_name):
+        """Obtiene un icono del caché o lo carga si no existe - OPTIMIZADO"""
+        if icon_name not in self._icon_cache:
+            icon_file = self._icon_path / icon_name
+            if icon_file.exists():
+                self._icon_cache[icon_name] = QIcon(str(icon_file))
+            else:
+                self._icon_cache[icon_name] = QIcon()  # Icono vacío si no existe
+        return self._icon_cache[icon_name]
+    
     def init_ui(self):
         self.setWindowTitle("PyTask")
         self.setFixedSize(350, 110)  # Más compacta aún
         
         # Establecer icono de la aplicación
-        icon_path = Path(__file__).parent / "img"
-        if (icon_path / "portapapeles.png").exists():
-            self.setWindowIcon(QIcon(str(icon_path / "portapapeles.png")))
+        if (self._icon_path / "portapapeles.png").exists():
+            self.setWindowIcon(self.get_icon("portapapeles.png"))
         
         # Forzar icono en la barra de tareas de Windows
         try:
@@ -92,6 +113,7 @@ class MainWindow(QMainWindow):
             pass  # Si falla, continuar sin cambiar la barra
         
         # Estilo mejorado - interfaz profesional con iconos y barra blanca
+        # OPTIMIZADO: Estilos más simples y eficientes
         self.setStyleSheet("""
             QMainWindow {
                 background-color: #ffffff;
@@ -108,21 +130,19 @@ class MainWindow(QMainWindow):
             }
             QToolButton:hover {
                 background-color: #e8f4ff;
-                border: 2px solid #0078d7;
+                border-color: #0078d7;
                 color: #0078d7;
             }
             QToolButton:pressed {
                 background-color: #cce4f7;
-                border: 2px solid #005a9e;
             }
             QToolButton:disabled {
                 background-color: #f8f8f8;
                 color: #aaaaaa;
-                border: 2px solid #e0e0e0;
             }
             QToolButton:checked {
                 background-color: #ff4444;
-                border: 2px solid #cc0000;
+                border-color: #cc0000;
                 color: #ffffff;
             }
             QMenu {
@@ -130,17 +150,19 @@ class MainWindow(QMainWindow):
                 border: 1px solid #d0d0d0;
                 font-size: 11px;
                 color: #333333;
-                padding: 5px;
             }
             QMenu::item {
                 padding: 8px 35px 8px 25px;
-                color: #333333;
-                border-radius: 4px;
+                border-radius: 3px;
                 margin: 2px 5px;
+                color: #333333;
             }
             QMenu::item:selected {
                 background-color: #0078d7;
                 color: #ffffff;
+            }
+            QMenu::item:disabled {
+                color: #999999;
             }
             QMenu::separator {
                 height: 1px;
@@ -163,13 +185,9 @@ class MainWindow(QMainWindow):
         main_layout.setSpacing(3)
         main_layout.setContentsMargins(5, 5, 5, 5)
         
-        # Ruta a los iconos
-        icon_path = Path(__file__).parent / "img"
-        
         # Botón Open
         self.open_button = QToolButton()
-        if (icon_path / "abrir-documento.png").exists():
-            self.open_button.setIcon(QIcon(str(icon_path / "abrir-documento.png")))
+        self.open_button.setIcon(self.get_icon("abrir-documento.png"))
         self.open_button.setText("Open")
         self.open_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         self.open_button.setFixedSize(62, 68)
@@ -178,8 +196,7 @@ class MainWindow(QMainWindow):
         
         # Botón Save
         self.save_button = QToolButton()
-        if (icon_path / "Save.png").exists():
-            self.save_button.setIcon(QIcon(str(icon_path / "Save.png")))
+        self.save_button.setIcon(self.get_icon("Save.png"))
         self.save_button.setText("Save")
         self.save_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         self.save_button.setFixedSize(62, 68)
@@ -189,8 +206,7 @@ class MainWindow(QMainWindow):
         
         # Botón Rec (F9)
         self.rec_button = QToolButton()
-        if (icon_path / "boton-detener.png").exists():
-            self.rec_button.setIcon(QIcon(str(icon_path / "boton-detener.png")))
+        self.rec_button.setIcon(self.get_icon("boton-detener.png"))
         self.rec_button.setText("Rec")
         self.rec_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         self.rec_button.setFixedSize(62, 68)
@@ -200,8 +216,7 @@ class MainWindow(QMainWindow):
         
         # Botón Play (F10) con menú
         self.play_button = QToolButton()
-        if (icon_path / "Play.png").exists():
-            self.play_button.setIcon(QIcon(str(icon_path / "Play.png")))
+        self.play_button.setIcon(self.get_icon("Play.png"))
         self.play_button.setText("Play")
         self.play_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         self.play_button.setFixedSize(62, 68)
@@ -209,13 +224,22 @@ class MainWindow(QMainWindow):
         self.play_button.setEnabled(False)
         self.play_button.clicked.connect(self.toggle_playback)
         
-        # Crear menú Play
+        # Crear menú Play LAZY (solo cuando se necesite)
+        self.play_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+        
+        # Conectar evento para recrear menú solo cuando sea necesario
+        def on_menu_about_to_show():
+            if self._menu_needs_update:
+                self.create_play_menu()
+        
+        # Crear menú inicial
         self.create_play_menu()
+        if self.play_button.menu():
+            self.play_button.menu().aboutToShow.connect(on_menu_about_to_show)
         
         # Botón Prefs
         self.prefs_button = QToolButton()
-        if (icon_path / "preferencias.png").exists():
-            self.prefs_button.setIcon(QIcon(str(icon_path / "preferencias.png")))
+        self.prefs_button.setIcon(self.get_icon("preferencias.png"))
         self.prefs_button.setText("Prefs")
         self.prefs_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         self.prefs_button.setFixedSize(62, 68)
@@ -233,135 +257,130 @@ class MainWindow(QMainWindow):
         
         # Status bar
         if self.settings.get('show_captions', True):
-            self.statusBar().showMessage(f"Listo | Grabar: {self.settings['record_hotkey'].upper()} | Reproducir: {self.settings['play_hotkey'].upper()}")
+            self.update_status_bar_default()
         else:
             self.statusBar().hide()
     
     def create_play_menu(self):
-        """Crea el menú del botón Play"""
+        """Crea el menú del botón Play - OPTIMIZADO con caché"""
+        # Si el menú ya existe y no necesita actualización, reutilizarlo
+        if self._play_menu_cache and not self._menu_needs_update:
+            return self._play_menu_cache
+        
+        # Crear nuevo menú
         play_menu = QMenu(self)
+        
+        # Pre-calcular estados para evitar múltiples evaluaciones
+        mode_once = (not self.interval_mode and self.playback_loops == 1)
+        mode_infinite = (not self.interval_mode and self.playback_loops == 0)
+        mode_interval = self.interval_mode
         
         # === VELOCIDADES ===
         play_menu.addAction("━━━ VELOCIDAD ━━━").setEnabled(False)
         
         if self.settings.get('speed_half', True):
-            action = play_menu.addAction("   ½x (Lento)" if self.play_speed != 0.5 else "● ½x (Lento)", lambda: self.set_play_speed(0.5))
+            play_menu.addAction("● ½x" if self.play_speed == 0.5 else "   ½x", lambda: self.set_play_speed(0.5))
         
         if self.settings.get('speed_1x', True):
-            action = play_menu.addAction("   1x (Normal)" if self.play_speed != 1.0 else "● 1x (Normal)", lambda: self.set_play_speed(1.0))
+            play_menu.addAction("● 1x" if self.play_speed == 1.0 else "   1x", lambda: self.set_play_speed(1.0))
         
         if self.settings.get('speed_2x', True):
-            action = play_menu.addAction("   2x (Rápido)" if self.play_speed != 2.0 else "● 2x (Rápido)", lambda: self.set_play_speed(2.0))
+            play_menu.addAction("● 2x" if self.play_speed == 2.0 else "   2x", lambda: self.set_play_speed(2.0))
         
         if self.settings.get('speed_100x', True):
-            action = play_menu.addAction("   100x (Máximo)" if self.play_speed != 100.0 else "● 100x (Máximo)", lambda: self.set_play_speed(100.0))
+            play_menu.addAction("● 100x" if self.play_speed == 100.0 else "   100x", lambda: self.set_play_speed(100.0))
         
-        play_menu.addAction(f"   {self.custom_speed}x (Personalizado)" if self.play_speed != self.custom_speed else f"● {self.custom_speed}x (Personalizado)", lambda: self.set_play_speed(self.custom_speed))
-        play_menu.addAction("   Cambiar velocidad personalizada...", self.set_custom_speed)
+        play_menu.addAction(f"● {self.custom_speed}x" if self.play_speed == self.custom_speed else f"   {self.custom_speed}x", lambda: self.set_play_speed(self.custom_speed))
+        play_menu.addAction("   Cambiar velocidad...", self.set_custom_speed)
         
         play_menu.addSeparator()
         
         # === REPETICIONES ===
         play_menu.addAction("━━━ REPETICIONES ━━━").setEnabled(False)
-        
-        # Determinar cuál está activo
-        mode_once = (not self.interval_mode and self.playback_loops == 1)
-        mode_infinite = (not self.interval_mode and self.playback_loops == 0)
-        mode_interval = self.interval_mode
-        
-        # Opción 1: Una vez
-        play_menu.addAction("● Reproducir 1 vez" if mode_once else "   Reproducir 1 vez", self.set_mode_once)
-        
-        # Opción 2: Infinito sin pausa
-        play_menu.addAction("● Reproducir infinitamente" if mode_infinite else "   Reproducir infinitamente", self.set_mode_infinite)
+        play_menu.addAction("● 1 vez" if mode_once else "   1 vez", self.set_mode_once)
+        play_menu.addAction("● Infinito" if mode_infinite else "   Infinito", self.set_mode_infinite)
         
         play_menu.addSeparator()
         
-        # Opción 3: Con pausa de tiempo (submenú)
-        interval_menu = play_menu.addMenu("⏱ Reproducir con pausa de tiempo")
+        # === Intervalo (simplificado) ===
+        interval_menu = play_menu.addMenu("⏱ Con pausa")
         
-        # Estado actual
         if mode_interval:
             if self.playback_loops == 0:
-                interval_menu.addAction(f"✓ Activo: Cada {self.interval_seconds}s (Infinito)").setEnabled(False)
+                interval_menu.addAction(f"✓ Cada {self.interval_seconds}s (∞)").setEnabled(False)
             else:
-                interval_menu.addAction(f"✓ Activo: Cada {self.interval_seconds}s ({self.playback_loops} veces)").setEnabled(False)
+                interval_menu.addAction(f"✓ Cada {self.interval_seconds}s ({self.playback_loops}x)").setEnabled(False)
             interval_menu.addSeparator()
         
-        # Configurar intervalo
-        interval_menu.addAction("Configurar tiempo y cantidad...", self.configure_interval_mode)
-        
-        # Atajos rápidos
+        interval_menu.addAction("Configurar...", self.configure_interval_mode)
         interval_menu.addSeparator()
-        interval_menu.addAction("Atajos rápidos:").setEnabled(False)
         
-        # Submenú: Infinito con pausa
-        infinite_interval_menu = interval_menu.addMenu("   ♾ Infinito (con pausa)")
-        infinite_interval_menu.addAction("● Cada 5s" if (mode_interval and self.playback_loops == 0 and self.interval_seconds == 5) else "   Cada 5s", lambda: self.set_interval_quick(5, 0))
-        infinite_interval_menu.addAction("● Cada 10s" if (mode_interval and self.playback_loops == 0 and self.interval_seconds == 10) else "   Cada 10s", lambda: self.set_interval_quick(10, 0))
-        infinite_interval_menu.addAction("● Cada 30s" if (mode_interval and self.playback_loops == 0 and self.interval_seconds == 30) else "   Cada 30s", lambda: self.set_interval_quick(30, 0))
-        infinite_interval_menu.addAction("● Cada 60s" if (mode_interval and self.playback_loops == 0 and self.interval_seconds == 60) else "   Cada 60s", lambda: self.set_interval_quick(60, 0))
-        
-        # Submenú: N veces con pausa
-        repeat_interval_menu = interval_menu.addMenu("   🔢 N veces (con pausa)")
-        repeat_interval_menu.addAction("● 3 veces cada 5s" if (mode_interval and self.playback_loops == 3 and self.interval_seconds == 5) else "   3 veces cada 5s", lambda: self.set_interval_quick(5, 3))
-        repeat_interval_menu.addAction("● 5 veces cada 10s" if (mode_interval and self.playback_loops == 5 and self.interval_seconds == 10) else "   5 veces cada 10s", lambda: self.set_interval_quick(10, 5))
-        repeat_interval_menu.addAction("● 10 veces cada 30s" if (mode_interval and self.playback_loops == 10 and self.interval_seconds == 30) else "   10 veces cada 30s", lambda: self.set_interval_quick(30, 10))
+        # Atajos rápidos más simples
+        interval_menu.addAction("● 5s ∞" if (mode_interval and self.playback_loops == 0 and self.interval_seconds == 5) else "   5s ∞", lambda: self.set_interval_quick(5, 0))
+        interval_menu.addAction("● 10s ∞" if (mode_interval and self.playback_loops == 0 and self.interval_seconds == 10) else "   10s ∞", lambda: self.set_interval_quick(10, 0))
+        interval_menu.addAction("● 5s x3" if (mode_interval and self.playback_loops == 3 and self.interval_seconds == 5) else "   5s x3", lambda: self.set_interval_quick(5, 3))
+        interval_menu.addAction("● 10s x5" if (mode_interval and self.playback_loops == 5 and self.interval_seconds == 10) else "   10s x5", lambda: self.set_interval_quick(10, 5))
         
         play_menu.addSeparator()
         
         # === HOTKEYS ===
-        play_menu.addAction("━━━ TECLAS RÁPIDAS ━━━").setEnabled(False)
+        play_menu.addAction("━━━ TECLAS ━━━").setEnabled(False)
         
-        # Submenú Recording Hotkey
-        rec_hotkey_menu = play_menu.addMenu(f"⌨ Tecla Grabar (Actual: {self.settings['record_hotkey'].upper()})")
+        rec_hotkey_menu = play_menu.addMenu(f"⌨ Grabar ({self.settings['record_hotkey'].upper()})")
         for key in ['F6', 'F7', 'F8', 'F9']:
-            action = rec_hotkey_menu.addAction(f"● {key}" if self.settings['record_hotkey'].lower() == key.lower() else f"   {key}", lambda k=key: self.set_recording_hotkey(k.lower()))
+            rec_hotkey_menu.addAction(f"● {key}" if self.settings['record_hotkey'].lower() == key.lower() else f"   {key}", lambda k=key: self.set_recording_hotkey(k.lower()))
         
-        # Submenú Playback Hotkey
-        play_hotkey_menu = play_menu.addMenu(f"⌨ Tecla Reproducir (Actual: {self.settings['play_hotkey'].upper()})")
+        play_hotkey_menu = play_menu.addMenu(f"⌨ Reproducir ({self.settings['play_hotkey'].upper()})")
         for key in ['F5', 'F10', 'F11', 'F12']:
-            action = play_hotkey_menu.addAction(f"● {key}" if self.settings['play_hotkey'].lower() == key.lower() else f"   {key}", lambda k=key: self.set_playback_hotkey(k.lower()))
+            play_hotkey_menu.addAction(f"● {key}" if self.settings['play_hotkey'].lower() == key.lower() else f"   {key}", lambda k=key: self.set_playback_hotkey(k.lower()))
         
         play_menu.addSeparator()
         
         # === OPCIONES ===
         play_menu.addAction("━━━ OPCIONES ━━━").setEnabled(False)
         
-        # Always on Top
         always_on_top_action = play_menu.addAction("✓ Siempre visible" if self.settings.get('always_on_top', False) else "   Siempre visible")
         always_on_top_action.triggered.connect(self.toggle_always_on_top)
         
-        # Show Captions
-        show_captions_action = play_menu.addAction("✓ Mostrar barra de estado" if self.settings.get('show_captions', True) else "   Mostrar barra de estado")
+        show_captions_action = play_menu.addAction("✓ Barra de estado" if self.settings.get('show_captions', True) else "   Barra de estado")
         show_captions_action.triggered.connect(self.toggle_show_captions)
         
+        # Guardar en caché
+        self._play_menu_cache = play_menu
+        self._menu_needs_update = False
+        
+        # Asignar al botón
         self.play_button.setMenu(play_menu)
-        self.play_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+        return play_menu
     
     def show_prefs_menu(self):
-        """Muestra menú de preferencias completo"""
-        prefs_menu = QMenu(self)
+        """Muestra menú de preferencias completo - OPTIMIZADO"""
+        # Reutilizar menú si existe
+        if not self._prefs_menu_cache:
+            self._prefs_menu_cache = QMenu(self)
+        
+        prefs_menu = self._prefs_menu_cache
+        prefs_menu.clear()  # Limpiar y reconstruir rápido
         
         # Velocidades habilitadas
-        speed_menu = prefs_menu.addMenu("Habilitar Velocidades")
+        speed_menu = prefs_menu.addMenu("Velocidades")
         
-        half_action = speed_menu.addAction("½x (Media Velocidad)")
+        half_action = speed_menu.addAction("½x")
         half_action.setCheckable(True)
         half_action.setChecked(self.settings.get('speed_half', True))
         half_action.triggered.connect(lambda: self.toggle_speed_option('speed_half'))
         
-        one_action = speed_menu.addAction("1x (Velocidad Normal)")
+        one_action = speed_menu.addAction("1x")
         one_action.setCheckable(True)
         one_action.setChecked(self.settings.get('speed_1x', True))
         one_action.triggered.connect(lambda: self.toggle_speed_option('speed_1x'))
         
-        two_action = speed_menu.addAction("2x (Doble Velocidad)")
+        two_action = speed_menu.addAction("2x")
         two_action.setCheckable(True)
         two_action.setChecked(self.settings.get('speed_2x', True))
         two_action.triggered.connect(lambda: self.toggle_speed_option('speed_2x'))
         
-        hundred_action = speed_menu.addAction("100x (Máxima Velocidad)")
+        hundred_action = speed_menu.addAction("100x")
         hundred_action.setCheckable(True)
         hundred_action.setChecked(self.settings.get('speed_100x', True))
         hundred_action.triggered.connect(lambda: self.toggle_speed_option('speed_100x'))
@@ -369,9 +388,7 @@ class MainWindow(QMainWindow):
         prefs_menu.addSeparator()
         
         # Recording Hotkey
-        rec_hotkey_menu = prefs_menu.addMenu("Tecla de Grabación")
-        rec_hotkey_menu.addAction(f"✓ Actual: {self.settings['record_hotkey'].upper()}")
-        rec_hotkey_menu.addSeparator()
+        rec_hotkey_menu = prefs_menu.addMenu(f"Tecla Grabar ({self.settings['record_hotkey'].upper()})")
         for key in ['F6', 'F7', 'F8', 'F9']:
             action = rec_hotkey_menu.addAction(key, lambda k=key: self.set_recording_hotkey(k.lower()))
             if self.settings['record_hotkey'].lower() == key.lower():
@@ -379,9 +396,7 @@ class MainWindow(QMainWindow):
                 action.setChecked(True)
         
         # Playback Hotkey
-        play_hotkey_menu = prefs_menu.addMenu("Tecla de Reproducción")
-        play_hotkey_menu.addAction(f"✓ Actual: {self.settings['play_hotkey'].upper()}")
-        play_hotkey_menu.addSeparator()
+        play_hotkey_menu = prefs_menu.addMenu(f"Tecla Reproducir ({self.settings['play_hotkey'].upper()})")
         for key in ['F10', 'F11', 'F12', 'F5']:
             action = play_hotkey_menu.addAction(key, lambda k=key: self.set_playback_hotkey(k.lower()))
             if self.settings['play_hotkey'].lower() == key.lower():
@@ -397,13 +412,19 @@ class MainWindow(QMainWindow):
         always_on_top_action.triggered.connect(self.toggle_always_on_top)
         
         # Show Captions
-        show_captions_action = prefs_menu.addAction("Mostrar Barra de Estado")
+        show_captions_action = prefs_menu.addAction("Barra de Estado")
         show_captions_action.setCheckable(True)
         show_captions_action.setChecked(self.settings.get('show_captions', True))
         show_captions_action.triggered.connect(self.toggle_show_captions)
         
+        # SendInput para juegos
+        sendinput_action = prefs_menu.addAction("Modo Juegos (SendInput)")
+        sendinput_action.setCheckable(True)
+        sendinput_action.setChecked(self.settings.get('use_sendinput', True))
+        sendinput_action.triggered.connect(self.toggle_sendinput)
+        
         prefs_menu.addSeparator()
-        prefs_menu.addAction("Acerca de PyTask v1.0", self.show_about)
+        prefs_menu.addAction("PyTask v1.1.0", self.show_about)
         
         prefs_menu.exec(self.prefs_button.mapToGlobal(self.prefs_button.rect().bottomLeft()))
     
@@ -411,6 +432,13 @@ class MainWindow(QMainWindow):
         """Muestra mensaje en status bar"""
         if self.settings.get('show_captions', True):
             self.statusBar().showMessage(message)
+    
+    def update_status_bar_default(self):
+        """Actualiza la barra de estado con el mensaje predeterminado"""
+        if self.settings.get('show_captions', True):
+            self.statusBar().showMessage(
+                f"Listo | Grabar: {self.settings['record_hotkey'].upper()} | Reproducir: {self.settings['play_hotkey'].upper()}"
+            )
     
     def toggle_recording(self):
         """F9 - Inicia o detiene la grabación"""
@@ -425,7 +453,7 @@ class MainWindow(QMainWindow):
             self.is_recording = True
             self.rec_button.setChecked(True)
             self.play_button.setEnabled(False)  # Deshabilitar play mientras graba
-            self.show_status("Grabando... (Presiona F9 para detener)")
+            self.show_status(f"Grabando... (Presiona {self.settings['record_hotkey'].upper()} para detener)")
             QTimer.singleShot(50, lambda: self.recorder.start_recording())
         else:
             # Detener grabación
@@ -447,13 +475,10 @@ class MainWindow(QMainWindow):
             self.stop_playback()
     
     def update_play_button_state(self, playing):
-        """Actualiza el estado visual del botón Play"""
-        icon_path = Path(__file__).parent / "img"
-        
+        """Actualiza el estado visual del botón Play - OPTIMIZADO con caché de iconos"""
         if playing:
             # Cambiar a rojo cuando está reproduciendo
-            if (icon_path / "boton-detener.png").exists():
-                self.play_button.setIcon(QIcon(str(icon_path / "boton-detener.png")))
+            self.play_button.setIcon(self.get_icon("boton-detener.png"))
             self.play_button.setStyleSheet("""
                 QToolButton {
                     background-color: #ff4444;
@@ -472,14 +497,9 @@ class MainWindow(QMainWindow):
             """)
             self.play_button.setText("Stop")
         else:
-            # Volver a color normal - aplicar estilo blanco explícito
-            if (icon_path / "Play.png").exists():
-                self.play_button.setIcon(QIcon(str(icon_path / "Play.png")))
+            # Volver a color normal
+            self.play_button.setIcon(self.get_icon("Play.png"))
             
-            # Primero limpiar cualquier estilo
-            self.play_button.setStyleSheet("")
-            
-            # Luego aplicar el estilo normal
             self.play_button.setStyleSheet("""
                 QToolButton {
                     background-color: #ffffff;
@@ -493,21 +513,15 @@ class MainWindow(QMainWindow):
                 }
                 QToolButton:hover {
                     background-color: #e8f4ff;
-                    border: 2px solid #0078d7;
+                    border-color: #0078d7;
                     color: #0078d7;
                 }
                 QToolButton:disabled {
                     background-color: #f8f8f8;
                     color: #aaaaaa;
-                    border: 2px solid #e0e0e0;
                 }
             """)
             self.play_button.setText("Play")
-            
-            # Forzar actualización completa
-            self.play_button.update()
-            self.play_button.repaint()
-            QApplication.processEvents()
     
     def open_macro(self):
         """Abre un archivo de macro"""
@@ -559,8 +573,8 @@ class MainWindow(QMainWindow):
     def set_play_speed(self, speed):
         """Establece la velocidad de reproducción"""
         self.play_speed = speed
+        self._menu_needs_update = True
         self.show_status(f"Velocidad: {speed}x")
-        self.create_play_menu()
     
     def set_custom_speed(self):
         """Establece velocidad personalizada"""
@@ -571,33 +585,33 @@ class MainWindow(QMainWindow):
         )
         if ok:
             self.custom_speed = speed
+            self._menu_needs_update = True
             self.show_status(f"Velocidad personalizada: {speed}x")
-            self.create_play_menu()
     
     def set_mode_once(self):
         """Modo: Reproducir 1 vez"""
         self.interval_mode = False
         self.playback_loops = 1
+        self._menu_needs_update = True
         self.show_status("Modo: Reproducir 1 vez")
-        self.create_play_menu()
     
     def set_mode_infinite(self):
         """Modo: Infinito sin pausa"""
         self.interval_mode = False
         self.playback_loops = 0
+        self._menu_needs_update = True
         self.show_status("Modo: Reproducción INFINITA (sin pausa)")
-        self.create_play_menu()
     
     def set_interval_quick(self, seconds, loops):
         """Atajo rápido para configurar intervalo"""
         self.interval_mode = True
         self.interval_seconds = seconds
         self.playback_loops = loops
+        self._menu_needs_update = True
         if loops == 0:
             self.show_status(f"Modo: Cada {seconds}s (INFINITO)")
         else:
             self.show_status(f"Modo: {loops} veces cada {seconds}s")
-        self.create_play_menu()
     
     def configure_interval_mode(self):
         """Configura el modo de intervalo"""
@@ -786,13 +800,13 @@ class MainWindow(QMainWindow):
                 self.playback_loops = repeat_spin.value()
                 self.show_status(f"Modo: {self.playback_loops} veces cada {self.interval_seconds}s")
             
-            self.create_play_menu()
+            self._menu_needs_update = True
     
     def toggle_interval_mode(self):
         """Activa/desactiva modo de intervalo"""
         self.interval_mode = not self.interval_mode
+        self._menu_needs_update = True
         self.show_status(f"Modo intervalo: {'ON' if self.interval_mode else 'OFF'} ({self.interval_seconds}s)")
-        self.create_play_menu()
     
     def set_interval_time(self):
         """Establece el tiempo de intervalo entre reproducciones"""
@@ -803,8 +817,8 @@ class MainWindow(QMainWindow):
         )
         if ok:
             self.interval_seconds = seconds
+            self._menu_needs_update = True
             self.show_status(f"Intervalo: {seconds} segundos")
-            self.create_play_menu()
     
     def set_playback_loops(self):
         """Establece el número de loops"""
@@ -815,11 +829,11 @@ class MainWindow(QMainWindow):
         )
         if ok:
             self.playback_loops = loops
+            self._menu_needs_update = True
             if loops == 0:
                 self.show_status(f"Repeticiones: INFINITO")
             else:
                 self.show_status(f"Repeticiones: {loops} vez/veces")
-            self.create_play_menu()
     
     def set_recording_hotkey(self, key):
         """Establece hotkey de grabación"""
@@ -827,13 +841,10 @@ class MainWindow(QMainWindow):
         self.settings['record_hotkey'] = key.lower()
         self.save_preferences()
         self.setup_global_hotkeys()
+        self._menu_needs_update = True
         self.show_status(f"Tecla de grabación cambiada: {old_key.upper()} → {key.upper()}")
-        self.create_play_menu()
-        # Actualizar status bar
-        if self.settings.get('show_captions', True):
-            QTimer.singleShot(2000, lambda: self.statusBar().showMessage(
-                f"Listo | Grabar: {self.settings['record_hotkey'].upper()} | Reproducir: {self.settings['play_hotkey'].upper()}"
-            ))
+        # Actualizar status bar al mensaje predeterminado después de 2 segundos
+        QTimer.singleShot(2000, self.update_status_bar_default)
     
     def set_playback_hotkey(self, key):
         """Establece hotkey de reproducción"""
@@ -841,13 +852,10 @@ class MainWindow(QMainWindow):
         self.settings['play_hotkey'] = key.lower()
         self.save_preferences()
         self.setup_global_hotkeys()
+        self._menu_needs_update = True
         self.show_status(f"Tecla de reproducción cambiada: {old_key.upper()} → {key.upper()}")
-        self.create_play_menu()
-        # Actualizar status bar
-        if self.settings.get('show_captions', True):
-            QTimer.singleShot(2000, lambda: self.statusBar().showMessage(
-                f"Listo | Grabar: {self.settings['record_hotkey'].upper()} | Reproducir: {self.settings['play_hotkey'].upper()}"
-            ))
+        # Actualizar status bar al mensaje predeterminado después de 2 segundos
+        QTimer.singleShot(2000, self.update_status_bar_default)
     
     def toggle_always_on_top(self):
         """Activa/desactiva always on top"""
@@ -860,8 +868,8 @@ class MainWindow(QMainWindow):
             self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowStaysOnTopHint)
         
         self.show()
+        self._menu_needs_update = True
         self.show_status(f"Siempre visible: {'ON' if self.settings['always_on_top'] else 'OFF'}")
-        self.create_play_menu()
     
     def toggle_show_captions(self):
         """Activa/desactiva captions"""
@@ -873,18 +881,33 @@ class MainWindow(QMainWindow):
         else:
             self.statusBar().hide()
         
-        self.create_play_menu()
+        self._menu_needs_update = True
+    
+    def toggle_sendinput(self):
+        """Cambia entre SendInput (juegos) y pynput (normal)"""
+        self.settings['use_sendinput'] = not self.settings.get('use_sendinput', True)
+        self.save_preferences()
+        
+        # Reinicializar el player
+        if self.settings['use_sendinput']:
+            self.player = MacroPlayerWindows()
+            self.show_status("✓ Modo Juegos activado (SendInput)")
+        else:
+            self.player = MacroPlayer()
+            self.show_status("✓ Modo Normal activado (pynput)")
+        
+        self._menu_needs_update = True
     
     def toggle_speed_option(self, speed_key):
         """Activa/desactiva una opción de velocidad"""
         self.settings[speed_key] = not self.settings.get(speed_key, True)
         self.save_preferences()
-        self.create_play_menu()
+        self._menu_needs_update = True
         self.show_status(f"Opción de velocidad {speed_key} cambiada")
     
     def show_about(self):
         """Muestra información sobre PyTask"""
-        self.show_status("PyTask v1.0 - Automatización Avanzada de Macros | GitHub: 4ismael1")
+        self.show_status("PyTask v1.1.0 - Automatización Avanzada | Modo Juegos ✓ | GitHub: 4ismael1")
     
     def play_macro(self, speed):
         """Reproduce la macro"""
@@ -894,6 +917,9 @@ class MainWindow(QMainWindow):
         
         if self.is_playing:
             return
+        
+        # OPTIMIZACIÓN: Lazy import de threading
+        import threading
         
         self.is_playing = True
         self.rec_button.setEnabled(False)  # Deshabilitar grabación mientras reproduce
@@ -914,7 +940,8 @@ class MainWindow(QMainWindow):
                     else:
                         mode_text = f"INTERVALO {self.interval_seconds}s ({self.playback_loops} veces)"
                     
-                    QTimer.singleShot(0, lambda: self.show_status(f"{mode_text} a {speed}x (F10=Detener)"))
+                    play_hotkey = self.settings['play_hotkey'].upper()
+                    QTimer.singleShot(0, lambda: self.show_status(f"{mode_text} a {speed}x ({play_hotkey}=Detener)"))
                     
                     while self.is_playing:
                         # Verificar antes de reproducir
@@ -932,9 +959,9 @@ class MainWindow(QMainWindow):
                         
                         # Mostrar progreso
                         if is_infinite:
-                            status_msg = f"INTERVALO {self.interval_seconds}s | Rep. {loops_done} (INFINITO) a {speed}x | F10=Detener"
+                            status_msg = f"INTERVALO {self.interval_seconds}s | Rep. {loops_done} (INFINITO) a {speed}x | {play_hotkey}=Detener"
                         else:
-                            status_msg = f"INTERVALO {self.interval_seconds}s | Rep. {loops_done}/{self.playback_loops} a {speed}x | F10=Detener"
+                            status_msg = f"INTERVALO {self.interval_seconds}s | Rep. {loops_done}/{self.playback_loops} a {speed}x | {play_hotkey}=Detener"
                         
                         QTimer.singleShot(0, lambda msg=status_msg: self.show_status(msg))
                         
@@ -957,7 +984,8 @@ class MainWindow(QMainWindow):
                     else:
                         mode_text = f"{self.playback_loops} VECES (sin pausa)"
                     
-                    QTimer.singleShot(0, lambda: self.show_status(f"{mode_text} a {speed}x (F10=Detener)"))
+                    play_hotkey = self.settings['play_hotkey'].upper()
+                    QTimer.singleShot(0, lambda: self.show_status(f"{mode_text} a {speed}x ({play_hotkey}=Detener)"))
                     
                     while self.is_playing:
                         # Verificar antes de reproducir
@@ -975,11 +1003,11 @@ class MainWindow(QMainWindow):
                         
                         # Mostrar progreso
                         if is_infinite:
-                            status_msg = f"INFINITO | Rep. {loops_done} a {speed}x | F10=Detener"
+                            status_msg = f"INFINITO | Rep. {loops_done} a {speed}x | {play_hotkey}=Detener"
                         elif self.playback_loops == 1:
                             status_msg = f"Completada 1 vez a {speed}x"
                         else:
-                            status_msg = f"Rep. {loops_done}/{self.playback_loops} a {speed}x | F10=Detener"
+                            status_msg = f"Rep. {loops_done}/{self.playback_loops} a {speed}x | {play_hotkey}=Detener"
                         
                         QTimer.singleShot(0, lambda msg=status_msg: self.show_status(msg))
                         
@@ -1034,14 +1062,45 @@ class MainWindow(QMainWindow):
         # Actualizar solo las que existen en la BD
         if saved_settings:
             self.settings.update(saved_settings)
+        
+        # Inicializar el player correcto según configuración
+        if self.settings.get('use_sendinput', True):
+            self.player = MacroPlayerWindows()  # Windows SendInput (compatible con juegos)
+        else:
+            self.player = MacroPlayer()  # pynput (más compatible con teclado)
     
     def save_preferences(self):
-        """Guarda preferencias en SQLite"""
+        """Guarda preferencias en SQLite - OPTIMIZADO con batch"""
+        # Solo guardar si hay cambios pendientes
+        if hasattr(self, '_settings_changed') and not self._settings_changed:
+            return
+        
+        # Batch save
+        conn = self.db.db_path
+        import sqlite3
+        conn_obj = sqlite3.connect(conn)
+        cursor = conn_obj.cursor()
+        
+        # Preparar todas las actualizaciones
         for key, value in self.settings.items():
-            self.db.set_setting(key, value)
+            if isinstance(value, bool):
+                value = 'true' if value else 'false'
+            cursor.execute('''
+                INSERT OR REPLACE INTO settings (key, value)
+                VALUES (?, ?)
+            ''', (key, str(value)))
+        
+        conn_obj.commit()
+        conn_obj.close()
+        
+        if hasattr(self, '_settings_changed'):
+            self._settings_changed = False
     
     def setup_global_hotkeys(self):
         """Configura hotkeys globales"""
+        # OPTIMIZACIÓN: Lazy import de keyboard
+        import keyboard
+        
         try:
             keyboard.unhook_all()
             
@@ -1058,6 +1117,8 @@ class MainWindow(QMainWindow):
     
     def closeEvent(self, event):
         """Cierre de ventana"""
+        import keyboard  # Lazy import
+        
         self.is_playing = False
         self.is_recording = False
         self.player.stop_playback()

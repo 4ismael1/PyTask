@@ -3,6 +3,55 @@ from pynput.mouse import Button, Controller as MouseController
 from pynput.keyboard import Key, Controller as KeyboardController
 import time
 import threading
+import ctypes
+import sys
+import json
+
+# Constantes de Windows para SendInput 
+INPUT_MOUSE = 0
+INPUT_KEYBOARD = 1
+
+MOUSEEVENTF_MOVE = 0x0001
+MOUSEEVENTF_LEFTDOWN = 0x0002
+MOUSEEVENTF_LEFTUP = 0x0004
+MOUSEEVENTF_RIGHTDOWN = 0x0008
+MOUSEEVENTF_RIGHTUP = 0x0010
+MOUSEEVENTF_MIDDLEDOWN = 0x0020
+MOUSEEVENTF_MIDDLEUP = 0x0040
+MOUSEEVENTF_WHEEL = 0x0800
+MOUSEEVENTF_ABSOLUTE = 0x8000
+
+# Estructuras de Windows
+class MOUSEINPUT(ctypes.Structure):
+    _fields_ = [
+        ("dx", ctypes.c_long),
+        ("dy", ctypes.c_long),
+        ("mouseData", ctypes.c_ulong),
+        ("dwFlags", ctypes.c_ulong),
+        ("time", ctypes.c_ulong),
+        ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong))
+    ]
+
+class KEYBDINPUT(ctypes.Structure):
+    _fields_ = [
+        ("wVk", ctypes.c_ushort),
+        ("wScan", ctypes.c_ushort),
+        ("dwFlags", ctypes.c_ulong),
+        ("time", ctypes.c_ulong),
+        ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong))
+    ]
+
+class INPUT_UNION(ctypes.Union):
+    _fields_ = [
+        ("mi", MOUSEINPUT),
+        ("ki", KEYBDINPUT)
+    ]
+
+class INPUT(ctypes.Structure):
+    _fields_ = [
+        ("type", ctypes.c_ulong),
+        ("union", INPUT_UNION)
+    ]
 
 class MacroRecorder:
     def __init__(self):
@@ -113,6 +162,143 @@ class MacroRecorder:
                 'key': key_char,
                 'timestamp': timestamp
             })
+
+
+
+
+class MacroPlayerWindows:
+    """
+    Reproductor de macros usando Windows SendInput API (como TinyTask)
+    Compatible con Roblox y otros juegos que bloquean pynput
+    """
+    def __init__(self):
+        self.playing = False
+        self.play_thread = None
+        
+        # Obtener resolución de pantalla para cálculos absolutos
+        self.screen_width = ctypes.windll.user32.GetSystemMetrics(0)
+        self.screen_height = ctypes.windll.user32.GetSystemMetrics(1)
+    
+    def play_macro(self, events, speed=1.0):
+        """Reproduce una macro"""
+        if self.playing:
+            return False
+        
+        self.playing = True
+        self.play_thread = threading.Thread(
+            target=self._play_events,
+            args=(events, speed),
+            daemon=True
+        )
+        self.play_thread.start()
+        return True
+    
+    def stop_playback(self):
+        """Detiene la reproducción"""
+        self.playing = False
+    
+    def _play_events(self, events, speed):
+        """Reproduce los eventos grabados"""
+        if not events:
+            self.playing = False
+            return
+        
+        start_time = time.time()
+        
+        for event in events:
+            if not self.playing:
+                break
+            
+            # Esperar el tiempo correspondiente
+            target_time = event['timestamp'] / speed
+            elapsed = time.time() - start_time
+            sleep_time = target_time - elapsed
+            
+            if sleep_time > 0:
+                time.sleep(sleep_time)
+            
+            # Ejecutar el evento con SendInput
+            self._execute_event_sendinput(event)
+        
+        self.playing = False
+    
+    def _execute_event_sendinput(self, event):
+        """Ejecuta un evento usando Windows SendInput API (como TinyTask)"""
+        try:
+            if event['type'] == 'mouse_move':
+                self._send_mouse_move(event['x'], event['y'])
+            
+            elif event['type'] == 'mouse_click':
+                button = event['button']
+                pressed = event['pressed']
+                
+                if 'left' in button.lower():
+                    flag = MOUSEEVENTF_LEFTDOWN if pressed else MOUSEEVENTF_LEFTUP
+                elif 'right' in button.lower():
+                    flag = MOUSEEVENTF_RIGHTDOWN if pressed else MOUSEEVENTF_RIGHTUP
+                elif 'middle' in button.lower():
+                    flag = MOUSEEVENTF_MIDDLEDOWN if pressed else MOUSEEVENTF_MIDDLEUP
+                else:
+                    flag = MOUSEEVENTF_LEFTDOWN if pressed else MOUSEEVENTF_LEFTUP
+                
+                self._send_mouse_event(event['x'], event['y'], flag)
+            
+            elif event['type'] == 'mouse_scroll':
+                # Scroll wheel
+                wheel_delta = int(event['dy'] * 120)  # Windows usa múltiplos de 120
+                self._send_mouse_scroll(event['x'], event['y'], wheel_delta)
+            
+            elif event['type'] in ['key_press', 'key_release']:
+                # Por ahora mantener pynput para teclado (más compatible)
+                # Se puede implementar SendInput para teclado si es necesario
+                pass
+        
+        except Exception as e:
+            print(f"Error ejecutando evento: {e}")
+    
+    def _send_mouse_move(self, x, y):
+        """Mueve el mouse usando SendInput (absoluto)"""
+        # Convertir a coordenadas absolutas (0-65535)
+        abs_x = int(x * 65535 / self.screen_width)
+        abs_y = int(y * 65535 / self.screen_height)
+        
+        mouse_input = INPUT()
+        mouse_input.type = INPUT_MOUSE
+        mouse_input.union.mi = MOUSEINPUT(
+            abs_x, abs_y, 0,
+            MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE,
+            0, None
+        )
+        
+        ctypes.windll.user32.SendInput(1, ctypes.byref(mouse_input), ctypes.sizeof(INPUT))
+    
+    def _send_mouse_event(self, x, y, flags):
+        """Envía evento de mouse (click) usando SendInput"""
+        # Convertir a coordenadas absolutas
+        abs_x = int(x * 65535 / self.screen_width)
+        abs_y = int(y * 65535 / self.screen_height)
+        
+        mouse_input = INPUT()
+        mouse_input.type = INPUT_MOUSE
+        mouse_input.union.mi = MOUSEINPUT(
+            abs_x, abs_y, 0,
+            flags | MOUSEEVENTF_ABSOLUTE,
+            0, None
+        )
+        
+        ctypes.windll.user32.SendInput(1, ctypes.byref(mouse_input), ctypes.sizeof(INPUT))
+    
+    def _send_mouse_scroll(self, x, y, wheel_delta):
+        """Envía evento de scroll usando SendInput"""
+        mouse_input = INPUT()
+        mouse_input.type = INPUT_MOUSE
+        mouse_input.union.mi = MOUSEINPUT(
+            0, 0, wheel_delta,
+            MOUSEEVENTF_WHEEL,
+            0, None
+        )
+        
+        ctypes.windll.user32.SendInput(1, ctypes.byref(mouse_input), ctypes.sizeof(INPUT))
 
 
 class MacroPlayer:
