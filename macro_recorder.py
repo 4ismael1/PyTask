@@ -21,6 +21,27 @@ MOUSEEVENTF_MIDDLEUP = 0x0040
 MOUSEEVENTF_WHEEL = 0x0800
 MOUSEEVENTF_ABSOLUTE = 0x8000
 
+# Constantes de teclado
+KEYEVENTF_KEYUP = 0x0002
+KEYEVENTF_UNICODE = 0x0004
+KEYEVENTF_SCANCODE = 0x0008
+
+# Mapeo de teclas especiales de pynput a Virtual Key Codes de Windows
+VK_MAP = {
+    'Key.space': 0x20, 'Key.enter': 0x0D, 'Key.tab': 0x09, 'Key.backspace': 0x08,
+    'Key.esc': 0x1B, 'Key.delete': 0x2E, 'Key.home': 0x24, 'Key.end': 0x23,
+    'Key.page_up': 0x21, 'Key.page_down': 0x22, 'Key.insert': 0x2D,
+    'Key.left': 0x25, 'Key.up': 0x26, 'Key.right': 0x27, 'Key.down': 0x28,
+    'Key.f1': 0x70, 'Key.f2': 0x71, 'Key.f3': 0x72, 'Key.f4': 0x73, 'Key.f5': 0x74,
+    'Key.f6': 0x75, 'Key.f7': 0x76, 'Key.f8': 0x77, 'Key.f9': 0x78, 'Key.f10': 0x79,
+    'Key.f11': 0x7A, 'Key.f12': 0x7B,
+    'Key.shift': 0x10, 'Key.shift_r': 0xA1, 'Key.shift_l': 0xA0,
+    'Key.ctrl': 0x11, 'Key.ctrl_r': 0xA3, 'Key.ctrl_l': 0xA2,
+    'Key.alt': 0x12, 'Key.alt_r': 0xA5, 'Key.alt_l': 0xA4,
+    'Key.caps_lock': 0x14, 'Key.num_lock': 0x90, 'Key.scroll_lock': 0x91,
+    'Key.print_screen': 0x2C, 'Key.pause': 0x13, 'Key.menu': 0x5D,
+}
+
 # Estructuras de Windows
 class MOUSEINPUT(ctypes.Structure):
     _fields_ = [
@@ -249,9 +270,9 @@ class MacroPlayerWindows:
                 self._send_mouse_scroll(event['x'], event['y'], wheel_delta)
             
             elif event['type'] in ['key_press', 'key_release']:
-                # Por ahora mantener pynput para teclado (más compatible)
-                # Se puede implementar SendInput para teclado si es necesario
-                pass
+                # Usar SendInput para teclado (compatible con juegos)
+                is_press = event['type'] == 'key_press'
+                self._send_keyboard_event(event['key'], is_press)
         
         except Exception as e:
             print(f"Error ejecutando evento: {e}")
@@ -299,6 +320,38 @@ class MacroPlayerWindows:
         )
         
         ctypes.windll.user32.SendInput(1, ctypes.byref(mouse_input), ctypes.sizeof(INPUT))
+    
+    def _send_keyboard_event(self, key, is_press):
+        """Envía evento de teclado usando SendInput"""
+        vk_code = self._get_vk_code(key)
+        
+        if vk_code is None:
+            return  # Tecla no soportada
+        
+        flags = 0 if is_press else KEYEVENTF_KEYUP
+        
+        kb_input = INPUT()
+        kb_input.type = INPUT_KEYBOARD
+        kb_input.union.ki = KEYBDINPUT(
+            vk_code, 0, flags, 0, None
+        )
+        
+        ctypes.windll.user32.SendInput(1, ctypes.byref(kb_input), ctypes.sizeof(INPUT))
+    
+    def _get_vk_code(self, key):
+        """Convierte una tecla de pynput a Virtual Key Code de Windows"""
+        # Teclas especiales (Key.*)
+        if key.startswith('Key.'):
+            return VK_MAP.get(key, None)
+        
+        # Caracteres normales
+        if len(key) == 1:
+            # Usar VkKeyScanA para obtener el código virtual de un carácter
+            result = ctypes.windll.user32.VkKeyScanA(ord(key))
+            if result != -1:
+                return result & 0xFF  # Byte bajo = VK code
+        
+        return None
 
 
 class MacroPlayer:
