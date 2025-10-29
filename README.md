@@ -23,7 +23,7 @@
 
 <div align="center">
 
-![Interfaz Principal](https://github.com/4ismael1/PyTask/blob/main/screenshots/PyTask.png)
+![Interfaz Principal](https://github.com/4ismael1/PyTask/releases/download/v1.1.0/PyTask.png)
 
 *Diseño compacto (350x110px) con 5 botones: Open, Save, Rec, Play, Prefs*
 
