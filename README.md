@@ -1,29 +1,29 @@
-# PyTask v2.0.0 (C# + Avalonia UI)
+ï»¿# PyTask v2.0.0 (C# + Avalonia UI)
 
-> Port oficial del proyecto original escrito en Python/PyQt6. El código Python completo se mantiene en la rama [`v1.0.0-python-legacy`](https://github.com/4ismael1/PyTask/tree/v1.0.0-python-legacy). La rama `main` contiene la nueva implementación en C# y Avalonia UI, optimizada para Windows.
+> Port oficial del proyecto original escrito en Python/PyQt6. El cï¿½digo Python completo se mantiene en la rama [`v1.0.0-python-legacy`](https://github.com/4ismael1/PyTask/tree/v1.0.0-python-legacy). La rama `main` contiene la nueva implementaciï¿½n en C# y Avalonia UI, optimizada para Windows.
 
-## ¿Por qué la migración?
+## ï¿½Por quï¿½ la migraciï¿½n?
 
-- **Inicio inmediato**: aplicación nativa, sin dependencias de Python ni intérprete externo.
-- **Modo Juegos (SendInput)** integrado para compatibilidad con apps y juegos que bloquean la entrada sintética tradicional.
-- **Hooks globales más seguros** y base de datos SQLite persistente en `%APPDATA%\PyTask`.
-- **Instalación opcional** mediante Inno Setup o ejecutable portable single-file.
+- **Inicio inmediato**: aplicaciï¿½n nativa, sin dependencias de Python ni intï¿½rprete externo.
+- **Modo Juegos (SendInput)** integrado para compatibilidad con apps y juegos que bloquean la entrada sintï¿½tica tradicional.
+- **Hooks globales mï¿½s seguros** y base de datos SQLite persistente en `%APPDATA%\PyTask`.
+- **Instalaciï¿½n opcional** mediante Inno Setup o ejecutable portable single-file.
 
 ## Funcionamiento del ejecutable
 
 Publicamos usando `dotnet publish -c Release -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=false /p:PublishReadyToRun=true --self-contained true`.
 
-- La **primera ejecución** tarda ~1–2 segundos porque .NET extrae las bibliotecas nativas en la caché local.
-- A partir de la **segunda ejecución**, el arranque es prácticamente instantáneo porque reutiliza la caché.
-- El ejecutable crea automáticamente `%APPDATA%\PyTask\pytask.db` para guardar ajustes.
+- La **primera ejecuciï¿½n** tarda ~1ï¿½2 segundos porque .NET extrae las bibliotecas nativas en la cachï¿½ local.
+- A partir de la **segunda ejecuciï¿½n**, el arranque es prï¿½cticamente instantï¿½neo porque reutiliza la cachï¿½.
+- El ejecutable crea automï¿½ticamente `%APPDATA%\PyTask\pytask.db` para guardar ajustes.
 
-## Características
+## Caracterï¿½sticas
 
-- Grabación y reproducción de mouse/teclado con múltiples velocidades.
+- Grabaciï¿½n y reproducciï¿½n de mouse/teclado con mï¿½ltiples velocidades.
 - Hotkeys globales configurables (por defecto F9 grabar / F10 reproducir).
-- Modos de reproducción: una sola vez, infinito o con intervalos.
-- Interfaz compacta (350x110 px) con sesión de estado y opciones rápidas.
-- Exporta/importa macros en formato `.macro` (JSON compatible con la versión Python).
+- Modos de reproducciï¿½n: una sola vez, infinito o con intervalos.
+- Interfaz compacta (350x110 px) con sesiï¿½n de estado y opciones rï¿½pidas.
+- Exporta/importa macros en formato `.macro` (JSON compatible con la versiï¿½n Python).
 
 ## Requisitos de desarrollo
 
@@ -31,7 +31,7 @@ Publicamos usando `dotnet publish -c Release -r win-x64 /p:PublishSingleFile=tru
 - .NET SDK 9.0
 - Visual Studio 2022 (o VS Code + extensiones C#)
 
-## Compilación / Publicación
+## Compilaciï¿½n / Publicaciï¿½n
 
 ```powershell
 # Restaurar dependencias
@@ -55,7 +55,7 @@ Hay un script de Inno Setup en `Installer/PyTaskInstaller.iss`. Para generar el 
 
 1. Ejecuta el publish anterior (para poblar la carpeta `publish`).
 2. Abre `Installer/PyTaskInstaller.iss` en Inno Setup y compila (`Build`).
-3. Obtendrás `Installer/Output/PyTaskInstaller.exe` listo para distribución.
+3. Obtendrï¿½s `Installer/Output/PyTaskInstaller.exe` listo para distribuciï¿½n.
 
 ## Estructura
 
@@ -75,12 +75,13 @@ PyTask/
 +-- LICENSE
 ```
 
-## Compatibilidad con la versión Python
+## Compatibilidad con la versiï¿½n Python
 
 - El formato `.macro` es el mismo; puedes crear archivos en cualquiera de las versiones y reutilizarlos.
-- La rama `v1.0.0-python-legacy` conserva el código PyQt6 original por motivos históricos o si necesitas portabilidad Python.
+- La rama `v1.0.0-python-legacy` conserva el cï¿½digo PyQt6 original por motivos histï¿½ricos o si necesitas portabilidad Python.
 
 ## Licencia
 
-MIT License © 2025 4ismael1
+MIT License ï¿½ 2025 4ismael1
+
 
