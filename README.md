@@ -43,7 +43,7 @@
 - Generado con `dotnet publish -c Release -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=false /p:PublishReadyToRun=true --self-contained true`.
 - **Primera ejecución**: tarda ~1–2 s (extrae las DLL nativas a la caché interna).
 - **A partir de la segunda**: arranque casi instantáneo (reutiliza caché).
-- No necesita instalar nada adicional; basta con `PyTaskAvalonia.exe`.
+- No necesita instalar nada adicional; basta con `PyTask-v2.0.0.exe`.
 
 ---
 
@@ -79,7 +79,7 @@
 ## 🚀 Instalación
 
 ### Versión Portable (recomendada)
-Descarga el release v2.0.0 y ejecuta `PyTaskAvalonia.exe`. La primera vez puede tardar ~2 s; después es instantáneo.
+Descarga el release v2.0.0 y ejecuta `PyTask-v2.0.0.exe`. La primera vez puede tardar ~2 s; después es instantáneo.
 
 ### Instalador (opcional)
 1. Ejecuta el publish anterior para poblar `bin/Release/.../publish`.
