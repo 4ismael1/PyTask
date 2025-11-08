@@ -10,6 +10,7 @@
         Title="{Binding WindowTitle}"
         Width="350" Height="110"
         CanResize="False"
+        WindowStartupLocation="CenterScreen"
         Topmost="{Binding AlwaysOnTop}"
         Background="White">
 

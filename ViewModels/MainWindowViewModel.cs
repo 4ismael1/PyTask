@@ -262,6 +262,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     public void TogglePlayback()
     {
+        if (IsRecording)
+        {
+            StatusMessage = "No se puede reproducir mientras se graba";
+            return;
+        }
+
         if (!IsPlaying)
         {
             PlayMacro();
@@ -499,3 +505,4 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ? "-"
         : key.ToUpperInvariant();
 }
+
