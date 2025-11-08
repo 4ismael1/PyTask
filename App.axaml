@@ -1,7 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="PyTaskAvalonia.App"
-             xmlns:local="using:PyTaskAvalonia"
              xmlns:converters="using:PyTaskAvalonia.Converters"
              RequestedThemeVariant="Default">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
@@ -16,10 +15,6 @@
         <converters:PlayIconConverter x:Key="PlayIconConverter"/>
         <converters:PlayTextConverter x:Key="PlayTextConverter"/>
     </Application.Resources>
-
-    <Application.DataTemplates>
-        <local:ViewLocator/>
-    </Application.DataTemplates>
   
     <Application.Styles>
         <FluentTheme />

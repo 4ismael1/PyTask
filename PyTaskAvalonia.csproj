@@ -3,7 +3,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <ApplicationIcon>Assets\Icons\portapapeles.ico</ApplicationIcon>
@@ -20,6 +20,22 @@
     <Copyright>© 2025 Ismael</Copyright>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>partial</TrimMode>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <DebuggerSupport>false</DebuggerSupport>
+    <EventSourceSupport>false</EventSourceSupport>
+    <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+    <StripSymbols>true</StripSymbols>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
   <ItemGroup>
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
@@ -29,7 +45,6 @@
     <PackageReference Include="Avalonia" Version="11.3.8" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.8" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.8" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.8" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
     <PackageReference Include="Avalonia.Diagnostics" Version="11.3.8">
       <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>

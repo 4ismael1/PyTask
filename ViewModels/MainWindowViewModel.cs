@@ -11,6 +11,7 @@ using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PyTaskAvalonia.Models;
+using PyTaskAvalonia.Serialization;
 using PyTaskAvalonia.Services;
 
 namespace PyTaskAvalonia.ViewModels;
@@ -52,14 +53,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private int _intervalSeconds = 5;
     private Settings _settings = new();
     private CancellationTokenSource? _playCancellation;
-    private static readonly JsonSerializerOptions MacroDeserializeOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
-    private static readonly JsonSerializerOptions MacroSerializeOptions = new()
-    {
-        WriteIndented = true
-    };
     
     public MainWindowViewModel()
     {
@@ -127,7 +120,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 var filePath = file.Path.LocalPath;
                 
                 var json = await File.ReadAllTextAsync(filePath);
-                var macroFile = JsonSerializer.Deserialize<MacroFile>(json, MacroDeserializeOptions);
+                var macroFile = JsonSerializer.Deserialize(json, MacroJsonContext.Default.MacroFile);
                 
                 if (macroFile?.Events is { Count: > 0 } events)
                 {
@@ -201,7 +194,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         try
         {
             var macroFile = new MacroFile { Events = _currentMacroEvents };
-            var json = JsonSerializer.Serialize(macroFile, MacroSerializeOptions);
+            var json = JsonSerializer.Serialize(macroFile, MacroJsonContext.Default.MacroFile);
             
             await File.WriteAllTextAsync(filePath, json);
             StatusMessage = $"Guardado: {Path.GetFileName(filePath)}";

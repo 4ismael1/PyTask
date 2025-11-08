@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Avalonia.Markup.Xaml;
 using PyTaskAvalonia.ViewModels;
@@ -32,7 +33,8 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    private void DisableAvaloniaDataAnnotationValidation()
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Es necesario manipular los plugins para evitar validaciones duplicadas y no afecta al trimming.")]
+    private static void DisableAvaloniaDataAnnotationValidation()
     {
         // Get an array of plugins to remove
         var dataValidationPluginsToRemove =
