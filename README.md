@@ -1,198 +1,86 @@
-# 📋 PyTask - Automatización de Macros
+# PyTask v2.0.0 (C# + Avalonia UI)
 
-<div align="center">
+> Port oficial del proyecto original escrito en Python/PyQt6. El c�digo Python completo se mantiene en la rama [`v1.0.0-python-legacy`](https://github.com/4ismael1/PyTask/tree/v1.0.0-python-legacy). La rama `main` contiene la nueva implementaci�n en C# y Avalonia UI, optimizada para Windows.
 
-![PyTask Banner](https://img.shields.io/badge/PyTask-v1.1.0-blue?style=for-the-badge)
-![Python](https://img.shields.io/badge/Python-3.8+-yellow?style=for-the-badge&logo=python)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
-![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey?style=for-the-badge&logo=windows)
-![Games](https://img.shields.io/badge/Modo-Bajo%20Nivel-red?style=for-the-badge&logo=windows)
+## �Por qu� la migraci�n?
 
-**Herramienta profesional de automatización de macros para Windows**  
-**🎮 Compatible con aplicaciones y juegos que requieren entrada de bajo nivel**
+- **Inicio inmediato**: aplicaci�n nativa, sin dependencias de Python ni int�rprete externo.
+- **Modo Juegos (SendInput)** integrado para compatibilidad con apps y juegos que bloquean la entrada sint�tica tradicional.
+- **Hooks globales m�s seguros** y base de datos SQLite persistente en `%APPDATA%\PyTask`.
+- **Instalaci�n opcional** mediante Inno Setup o ejecutable portable single-file.
 
-[![Descargar](https://img.shields.io/badge/Descargar-PyTask%20v1.1.0-brightgreen?style=for-the-badge&logo=windows)](https://github.com/4ismael1/PyTask/releases/tag/v1.1.0)
+## Funcionamiento del ejecutable
 
-[Características](#-características) • [Uso](#-uso) • [Instalación](#-instalación) • [Changelog](#-changelog)
+Publicamos usando `dotnet publish -c Release -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=false /p:PublishReadyToRun=true --self-contained true`.
 
-</div>
+- La **primera ejecuci�n** tarda ~1�2 segundos porque .NET extrae las bibliotecas nativas en la cach� local.
+- A partir de la **segunda ejecuci�n**, el arranque es pr�cticamente instant�neo porque reutiliza la cach�.
+- El ejecutable crea autom�ticamente `%APPDATA%\PyTask\pytask.db` para guardar ajustes.
 
----
+## Caracter�sticas
 
-## 📸 Interfaz
+- Grabaci�n y reproducci�n de mouse/teclado con m�ltiples velocidades.
+- Hotkeys globales configurables (por defecto F9 grabar / F10 reproducir).
+- Modos de reproducci�n: una sola vez, infinito o con intervalos.
+- Interfaz compacta (350x110 px) con sesi�n de estado y opciones r�pidas.
+- Exporta/importa macros en formato `.macro` (JSON compatible con la versi�n Python).
 
-<div align="center">
+## Requisitos de desarrollo
 
-![Interfaz Principal](https://github.com/4ismael1/PyTask/releases/download/v1.1.0/PyTask.png)
+- Windows 10/11 x64
+- .NET SDK 9.0
+- Visual Studio 2022 (o VS Code + extensiones C#)
 
-*Diseño compacto (350x110px) con 5 botones: Open, Save, Rec, Play, Prefs*
+## Compilaci�n / Publicaci�n
 
-</div>
+```powershell
+# Restaurar dependencias
+ dotnet restore
 
----
+# Compilar en Debug
+ dotnet build
 
-## ✨ Características
+# Ejecutar
+dotnet run
 
-### 🎮 **NUEVO en v1.1**: Modo de Entrada de Bajo Nivel (SendInput)
-- ✅ **Mayor compatibilidad** - Funciona en aplicaciones y juegos que filtran entrada sintética de alto nivel
-- ✅ **Sin pre-interacción requerida** - Funciona inmediatamente sin configuración adicional
-- ✅ **Tecnología de bajo nivel** (Windows SendInput API)
-- ✅ **Entrada directa al sistema** - Indistinguible de dispositivos de hardware reales
-- 🔧 Activable en Preferencias → "Modo Juegos (SendInput)" (activo por defecto)
-
-### 🎮 Interfaz Compacta y Optimizada
-- Diseño minimalista de solo 350x110px
-- 5 botones esenciales con iconos profesionales
-- **97.5% más rápido** que la versión original
-- Apertura de menús instantánea (50ms vs 2000ms)
-- Barra de título blanca integrada con Windows 11
-
-### 🎬 Grabación y Reproducción
-- Captura precisa de mouse y teclado
-- Múltiples velocidades: ½x, 1x, 2x, 100x, personalizada
-- Modo intervalo: Ejecuta cada X segundos (5s, 10s, 30s, 60s, personalizado)
-- Repeticiones configurables: 1 vez, N veces, o infinito
-
-### ⌨️ Hotkeys Globales Configurables
-- **F9** (predeterminado) - Iniciar/Detener grabación
-- **F10** (predeterminado) - Reproducir/Detener macro
-- **Personalizables** de F5 a F12
-- Funcionan desde cualquier aplicación
-
-### 💾 Almacenamiento
-- Archivos .macro en formato JSON
-- Base de datos SQLite para configuración (guardada en AppData)
-- Totalmente portable
-
----
-
-## 🚀 Instalación
-
-### Versión Portable (Recomendada)
-Descarga **[PyTask.exe v1.1.0](https://github.com/4ismael1/PyTask/releases/tag/v1.1.0)** y ejecútalo directamente. No requiere instalación.
-
-### Desde el Código Fuente
-```bash
-git clone https://github.com/4ismael1/PyTask.git
-cd PyTask
-pip install -r requirements.txt
-python main.py
+# Publicar ejecutable portable (self-contained, single-file, R2R)
+dotnet publish -c Release -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=false /p:PublishReadyToRun=true --self-contained true
 ```
 
-**Requisitos**:
-- Python 3.8+
-- Windows 10/11
-- PyQt6 6.6.1+
-- pynput 1.7.6+
-- keyboard 0.13.5+
+El ejecutable resultante se encuentra en `bin/Release/net9.0/win-x64/publish/PyTaskAvalonia.exe`.
 
----
+## Instalador opcional
 
-## 📖 Uso
+Hay un script de Inno Setup en `Installer/PyTaskInstaller.iss`. Para generar el instalador:
 
-### 🎮 Usar con Aplicaciones Exigentes
-1. Ve a **Preferencias** (⚙️)
-2. Activa **"Modo Juegos (SendInput)"** (debería estar activo por defecto)
-3. Graba tu macro normalmente
-4. ¡Funciona inmediatamente en aplicaciones que requieren entrada de bajo nivel!
+1. Ejecuta el publish anterior (para poblar la carpeta `publish`).
+2. Abre `Installer/PyTaskInstaller.iss` en Inno Setup y compila (`Build`).
+3. Obtendr�s `Installer/Output/PyTaskInstaller.exe` listo para distribuci�n.
 
-### Grabar una Macro
-1. Presiona **F9** o click en **"Rec"**
-2. Realiza las acciones que deseas automatizar
-3. Presiona **F9** nuevamente para detener
-4. Guarda con el botón **"Save"**
+## Estructura
 
-### Reproducir una Macro
-1. Abre un archivo con **"Open"** o graba uno nuevo
-2. Presiona **F10** o click en **"Play"**
-3. Configura velocidad y repeticiones desde el menú desplegable
-4. Para detener, presiona **F10** nuevamente
+```
+PyTask/
++-- Assets/
++-- Converters/
++-- Models/
++-- Services/
++-- ViewModels/
++-- Views/
++-- Installer/
++-- App.axaml / App.axaml.cs
++-- Program.cs
++-- PyTaskAvalonia.csproj
++-- README.md
++-- LICENSE
+```
 
-### Menú de Opciones
+## Compatibilidad con la versi�n Python
 
-#### Velocidades
-- **½x** - Reproducción lenta
-- **1x** - Velocidad normal
-- **2x** - Doble velocidad
-- **100x** - Súper rápido
-- **Personalizada** - Define tu propia velocidad
+- El formato `.macro` es el mismo; puedes crear archivos en cualquiera de las versiones y reutilizarlos.
+- La rama `v1.0.0-python-legacy` conserva el c�digo PyQt6 original por motivos hist�ricos o si necesitas portabilidad Python.
 
-#### Repeticiones
-- **Modo Intervalo**: Reproduce cada X segundos con cantidad configurable
-- Opciones: 5s, 10s, 30s, 60s o personalizado
-- Cantidad: 1 a 999 veces o infinito
+## Licencia
 
-#### Preferencias
-- Cambiar hotkeys (F9/F10)
-- Ventana siempre visible
-- Mostrar/ocultar barra de estado
+MIT License � 2025 4ismael1
 
----
-
-## 🛠️ Tecnologías
-
-- **PyQt6** - Interfaz gráfica moderna
-- **Windows SendInput API** - Compatibilidad con juegos (v1.1+)
-- **ctypes** - Integración con Windows API
-- **pynput** - Captura de eventos y fallback
-- **keyboard** - Hotkeys globales
-- **SQLite** - Persistencia de configuración
-
----
-
-## 📊 Changelog
-
-### [v1.1.0] - 2025-10-29 🎮🚀
-**Actualización Mayor: Compatibilidad con Entrada de Bajo Nivel + Optimización de Rendimiento**
-
-- ✅ **Modo de Entrada de Bajo Nivel** - Windows SendInput API para máxima compatibilidad
-- ✅ **Mayor compatibilidad** - Funciona en aplicaciones y juegos que requieren entrada directa al sistema
-- ✅ **Sin pre-interacción** - Las macros funcionan inmediatamente
-- ⚡ **97.5% más rápido** - Apertura de menús optimizada (2000ms → 50ms)
-- 💾 **Caché inteligente** - Iconos y menús en memoria
-- 🎨 **Textos visibles** - Corregido problema de texto blanco sobre blanco
-- ⌨️ **Hotkeys dinámicos** - Los mensajes reflejan las teclas configuradas actuales
-- 📦 **Lazy imports** - Startup 25% más rápido
-- 🔧 **Checkbox configurable** - Modo de bajo nivel activable en Preferencias
-- 📚 **Documentación completa** - Guías técnicas y de uso
-
-### [v1.0.0] - 2025-10-28 🎉
-- 🎬 Grabación y reproducción de macros
-- ⌨️ Hotkeys globales F9/F10
-- 💾 Formato .macro y SQLite
-- 🎨 Interfaz compacta 350x110px
-
----
-
-## 📝 Notas
-
-- **Permisos de administrador**: Ejecuta como administrador si los hotkeys no funcionan
-- **Modo de Bajo Nivel**: Activo por defecto para máxima compatibilidad con aplicaciones exigentes
-- **Coordenadas absolutas**: Las posiciones del mouse son absolutas (compatible con multi-monitor)
-- **Uso responsable**: Usa esta herramienta de forma ética y legal
-
----
-
-## 🎨 Créditos
-
-### Iconos
-<a href="https://www.flaticon.es/iconos-gratis/lista" title="lista iconos">Lista iconos creados por Kiranshastry - Flaticon</a>
-
-### Desarrollador
-**GitHub**: [@4ismael1](https://github.com/4ismael1)
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
-
----
-
-<div align="center">
-
-**Hecho con ❤️ por [@4ismael1](https://github.com/4ismael1)**
-
-⭐ Dale una estrella si este proyecto te fue útil
-
-</div>

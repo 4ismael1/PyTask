@@ -1,0 +1,242 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PyTaskAvalonia.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="110"
+        x:Class="PyTaskAvalonia.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/Icons/portapapeles.ico"
+        Title="{Binding WindowTitle}"
+        Width="350" Height="110"
+        CanResize="False"
+        Topmost="{Binding AlwaysOnTop}"
+        Background="White">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Window.Styles>
+        <!-- Estilos simples para MenuItems -->
+        <Style Selector="MenuItem">
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="2"/>
+        </Style>
+        
+        <Style Selector="MenuItem:disabled">
+            <Setter Property="Foreground" Value="#999999"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        
+        <Style Selector="Separator">
+            <Setter Property="Height" Value="1"/>
+            <Setter Property="Background" Value="#e0e0e0"/>
+            <Setter Property="Margin" Value="5,2"/>
+        </Style>
+    </Window.Styles>
+
+    <Window.Resources>
+        <!-- Menú del botón Prefs -->
+        <MenuFlyout x:Key="PrefsMenuFlyout" Placement="BottomEdgeAlignedLeft" Opening="PrefsMenu_Opening">
+            <!-- REPRODUCCIÓN -->
+            <MenuItem Header="Reproducción">
+                <MenuItem Header="Velocidad">
+                    <MenuItem x:Name="PrefsSpeed05Item" Header="0.5x" Click="SetSpeed_Click" Tag="0.5"/>
+                    <MenuItem x:Name="PrefsSpeed1Item" Header="1x" Click="SetSpeed_Click" Tag="1"/>
+                    <MenuItem x:Name="PrefsSpeed2Item" Header="2x" Click="SetSpeed_Click" Tag="2"/>
+                    <MenuItem x:Name="PrefsSpeed100Item" Header="100x" Click="SetSpeed_Click" Tag="100"/>
+                    <Separator/>
+                    <MenuItem Header="Personalizar..." Click="SetCustomSpeed_Click"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Modo">
+                    <MenuItem x:Name="PrefsModeOnceItem" Header="Una vez" Click="SetModeOnce_Click"/>
+                    <MenuItem x:Name="PrefsModeInfiniteItem" Header="Infinito" Click="SetModeInfinite_Click"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Intervalo">
+                    <MenuItem x:Name="PrefsIntervalNoneItem" Header="Sin intervalo" Click="SetIntervalQuick_Click" Tag="0,1"/>
+                    <MenuItem x:Name="PrefsInterval1Item" Header="1 segundo" Click="SetIntervalQuick_Click" Tag="1,1"/>
+                    <MenuItem x:Name="PrefsInterval5Item" Header="5 segundos" Click="SetIntervalQuick_Click" Tag="5,1"/>
+                    <MenuItem x:Name="PrefsInterval10Item" Header="10 segundos" Click="SetIntervalQuick_Click" Tag="10,1"/>
+                    <Separator/>
+                    <MenuItem x:Name="PrefsIntervalCustomItem" Header="Personalizar..." Click="ConfigureInterval_Click"/>
+                </MenuItem>
+            </MenuItem>
+            <Separator/>
+            
+            <!-- TECLAS -->
+            <MenuItem x:Name="PrefsRecordHotkeyMenu" Header="Tecla Grabar (F9)">
+                <MenuItem Header="F6" Click="SetRecordHotkey_Click" Tag="F6"/>
+                <MenuItem Header="F7" Click="SetRecordHotkey_Click" Tag="F7"/>
+                <MenuItem Header="F8" Click="SetRecordHotkey_Click" Tag="F8"/>
+                <MenuItem Header="F9" Click="SetRecordHotkey_Click" Tag="F9"/>
+            </MenuItem>
+            <MenuItem x:Name="PrefsPlayHotkeyMenu" Header="Tecla Reproducir (F10)">
+                <MenuItem Header="F5" Click="SetPlayHotkey_Click" Tag="F5"/>
+                <MenuItem Header="F10" Click="SetPlayHotkey_Click" Tag="F10"/>
+                <MenuItem Header="F11" Click="SetPlayHotkey_Click" Tag="F11"/>
+                <MenuItem Header="F12" Click="SetPlayHotkey_Click" Tag="F12"/>
+            </MenuItem>
+            <Separator/>
+            
+            <!-- OPCIONES -->
+            <MenuItem x:Name="PrefsAlwaysOnTopItem" Header="Siempre Visible" Click="ToggleAlwaysOnTop_Click"/>
+            <MenuItem x:Name="PrefsStatusBarItem" Header="Barra de Estado" Click="ToggleShowCaptions_Click"/>
+            <MenuItem x:Name="PrefsSendInputItem" Header="Modo Juegos (SendInput)" Click="ToggleSendInput_Click"/>
+            <Separator/>
+            <MenuItem Header="PyTask v2.0.0" Click="ShowAbout_Click"/>
+        </MenuFlyout>
+    </Window.Resources>
+
+    <Grid RowDefinitions="*,Auto">
+        <!-- Botones principales -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,*,*,*,*" Margin="5,5,5,0">
+            <!-- Botón Open -->
+            <Button Grid.Column="0" 
+                    Margin="2"
+                    Command="{Binding OpenMacroCommand}"
+                    Background="White"
+                    BorderBrush="#d0d0d0"
+                    CornerRadius="8"
+                    Padding="3,5"
+                    Width="58"
+                    Height="62"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Image Source="/Assets/Icons/abrir-documento.png" 
+                           Width="24" Height="24"
+                           Margin="0,0,0,2"
+                           RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                    <TextBlock Text="Open" 
+                               FontSize="8.5" 
+                               FontWeight="Bold"
+                               Foreground="#333333"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <!-- Botón Save -->
+            <Button Grid.Column="1" 
+                    Margin="2"
+                    Command="{Binding SaveMacroCommand}"
+                    IsEnabled="{Binding CanSave}"
+                    Background="White"
+                    BorderBrush="#d0d0d0"
+                    CornerRadius="8"
+                    Padding="3,5"
+                    Width="58"
+                    Height="62"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Image Source="/Assets/Icons/Save.png" 
+                           Width="24" Height="24"
+                           Margin="0,0,0,2"
+                           RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                    <TextBlock Text="Save" 
+                               FontSize="8.5" 
+                               FontWeight="Bold"
+                               Foreground="#333333"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <!-- Botón Rec -->
+            <Button Grid.Column="2" 
+                    Margin="2"
+                    Command="{Binding ToggleRecordingCommand}"
+                    Background="{Binding IsRecording, Converter={StaticResource RecordingBackgroundConverter}}"
+                    BorderBrush="{Binding IsRecording, Converter={StaticResource RecordingBorderConverter}}"
+                    CornerRadius="8"
+                    Padding="3,5"
+                    Width="58"
+                    Height="62"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Image Source="/Assets/Icons/boton-detener.png" 
+                           Width="24" Height="24"
+                           Margin="0,0,0,2"
+                           RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                    <TextBlock Text="Rec" 
+                               FontSize="8.5" 
+                               FontWeight="Bold"
+                               Foreground="{Binding IsRecording, Converter={StaticResource RecordingTextConverter}}"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <!-- Botón Play -->
+            <Button Grid.Column="3" 
+                    Margin="2"
+                    Name="PlayButton"
+                    IsEnabled="{Binding CanPlay}"
+                    Background="{Binding IsPlaying, Converter={StaticResource PlayingBackgroundConverter}}"
+                    BorderBrush="{Binding IsPlaying, Converter={StaticResource PlayingBorderConverter}}"
+                    CornerRadius="8"
+                    Padding="3,5"
+                    Width="58"
+                    Height="62"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Click="PlayButton_Click">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Image Width="24" Height="24" Margin="0,0,0,2"
+                           Source="{Binding IsPlaying, Converter={StaticResource PlayIconConverter}}"
+                           RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                    <TextBlock FontSize="8.5" 
+                               FontWeight="Bold"
+                               Foreground="{Binding IsPlaying, Converter={StaticResource PlayingTextConverter}}"
+                               Text="{Binding IsPlaying, Converter={StaticResource PlayTextConverter}}"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <!-- Botón Prefs -->
+            <Button Grid.Column="4" 
+                    Margin="2"
+                    Name="PrefsButton"
+                    Background="White"
+                    BorderBrush="#d0d0d0"
+                    CornerRadius="8"
+                    Padding="3,5"
+                    Width="58"
+                    Height="62"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Click="PrefsButton_Click">
+                <Button.ContextFlyout>
+                    <StaticResource ResourceKey="PrefsMenuFlyout"/>
+                </Button.ContextFlyout>
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Image Source="/Assets/Icons/preferencias.png" 
+                           Width="24" Height="24"
+                           Margin="0,0,0,2"
+                           RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                    <TextBlock Text="Prefs" 
+                               FontSize="8.5" 
+                               FontWeight="Bold"
+                               Foreground="#333333"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- Barra de estado -->
+        <Border Grid.Row="1" 
+                BorderBrush="#d0d0d0" 
+                BorderThickness="0,1,0,0"
+                Background="White"
+                IsVisible="{Binding ShowStatusBar}">
+            <TextBlock Text="{Binding StatusMessage}" 
+                       FontSize="10"
+                       Foreground="#333333"
+                       Margin="5,3"
+                       TextTrimming="CharacterEllipsis"/>
+        </Border>
+    </Grid>
+
+</Window>

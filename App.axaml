@@ -1,0 +1,67 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="PyTaskAvalonia.App"
+             xmlns:local="using:PyTaskAvalonia"
+             xmlns:converters="using:PyTaskAvalonia.Converters"
+             RequestedThemeVariant="Default">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.Resources>
+        <converters:RecordingBackgroundConverter x:Key="RecordingBackgroundConverter"/>
+        <converters:RecordingBorderConverter x:Key="RecordingBorderConverter"/>
+        <converters:RecordingTextConverter x:Key="RecordingTextConverter"/>
+        <converters:PlayingBackgroundConverter x:Key="PlayingBackgroundConverter"/>
+        <converters:PlayingBorderConverter x:Key="PlayingBorderConverter"/>
+        <converters:PlayingTextConverter x:Key="PlayingTextConverter"/>
+        <converters:PlayIconConverter x:Key="PlayIconConverter"/>
+        <converters:PlayTextConverter x:Key="PlayTextConverter"/>
+    </Application.Resources>
+
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+  
+    <Application.Styles>
+        <FluentTheme />
+        
+        <!-- Estilos exactos del original PyQt6 -->
+        <Style Selector="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="#ffffff"/>
+            <Setter Property="BorderBrush" Value="#d0d0d0"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Foreground" Value="#333333"/>
+        </Style>
+        
+        <Style Selector="Button:disabled /template/ ContentPresenter">
+            <Setter Property="Background" Value="#f8f8f8"/>
+            <Setter Property="BorderBrush" Value="#d0d0d0"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+        
+        <Style Selector="Button:disabled">
+            <Setter Property="Foreground" Value="#aaaaaa"/>
+        </Style>
+        
+        <Style Selector="Button:disabled Image">
+            <Setter Property="Opacity" Value="0.5"/>
+        </Style>
+        
+        <Style Selector="Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#e8f4ff"/>
+            <Setter Property="BorderBrush" Value="#0078d7"/>
+        </Style>
+        
+        <Style Selector="Button:pointerover TextBlock">
+            <Setter Property="Foreground" Value="#0078d7"/>
+        </Style>
+        
+        <Style Selector="Button:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#cce4f7"/>
+        </Style>
+        
+        <Style Selector="Button:pressed TextBlock">
+            <Setter Property="Foreground" Value="#0078d7"/>
+        </Style>
+    </Application.Styles>
+</Application>
