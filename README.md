@@ -1,185 +1,216 @@
-# 📋 PyTask - Automatización de Macros (v2.0.0 C#)
+# PyTask - Automatizacion de Macros (v3.0.0 Rust)
 
 <div align="center">
 
-![PyTask Banner](https://img.shields.io/badge/PyTask-v2.0.0-blue?style=for-the-badge)
-![CSharp](https://img.shields.io/badge/C%23-Avalonia-purple?style=for-the-badge&logo=dotnet)
+![PyTask Banner](https://img.shields.io/badge/PyTask-v3.0.0-blue?style=for-the-badge)
+![Rust](https://img.shields.io/badge/Rust-Win32_UI-orange?style=for-the-badge&logo=rust)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey?style=for-the-badge&logo=windows)
 ![Games](https://img.shields.io/badge/Modo-SendInput-red?style=for-the-badge&logo=windows)
 
-**Port oficial en C# + Avalonia UI del proyecto original en Python/PyQt6**  
-**🎮 Compatible con aplicaciones y juegos que requieren entrada de bajo nivel**
+**Reescritura nativa en Rust + Win32 UI de PyTask.**  
+**Compatible con aplicaciones y juegos que requieren entrada de bajo nivel.**
 
-[![Descargar](https://img.shields.io/badge/Descargar-PyTask%20v2.0.0-brightgreen?style=for-the-badge&logo=windows)](https://github.com/4ismael1/PyTask/releases/tag/v2.0.0)
+[![Descargar](https://img.shields.io/badge/Descargar-PyTask%20v3.0.0-brightgreen?style=for-the-badge&logo=windows)](https://github.com/4ismael1/PyTask/releases/tag/v3.0.0)
 
-[Características](#-características) • [Uso](#-uso) • [Instalación](#-instalación) • [Changelog](#-changelog)
+[Caracteristicas](#caracteristicas) - [Uso](#uso) - [Instalacion](#instalacion) - [Changelog](#changelog)
 
 </div>
 
 ---
 
-## 📸 Interfaz
+## Interfaz
 
 <div align="center">
 
 ![Interfaz Principal](https://github.com/4ismael1/PyTask/releases/download/v1.1.0/PyTask.png)
 
-*Diseño compacto (350x110px) con 5 botones: Open, Save, Rec, Play, Prefs*
+*Diseno compacto con 5 botones: Open, Save, Rec, Play, Prefs.*
 
 </div>
 
 ---
 
-## 🔄 Migración de Python a C#
+## Migracion
 
-- El código Python/PyQt6 se mantiene en la rama [`v1.0.0-python-legacy`](https://github.com/4ismael1/PyTask/tree/v1.0.0-python-legacy).
-- La rama `main` contiene PyTask **v2.0.0** escrito en **C# + Avalonia UI**:
-  - Ejecutable nativo sin dependencias de Python.
-  - Hooks globales endurecidos + entrada SendInput de bajo nivel.
-  - Configuración persistente vía SQLite en `%APPDATA%\PyTask`.
+- El codigo Python/PyQt6 se mantiene en la rama [`v1.0.0-python-legacy`](https://github.com/4ismael1/PyTask/tree/v1.0.0-python-legacy).
+- El codigo C# + Avalonia UI se mantiene en la rama [`v2.0.0-csharp-legacy`](https://github.com/4ismael1/PyTask/tree/v2.0.0-csharp-legacy).
+- La rama `main` contiene PyTask **v3.0.0** escrito en **Rust + Win32 UI**:
+  - Ejecutable portable sin runtime de Python, .NET ni dependencias externas.
+  - Interfaz nativa ligera con arranque practicamente instantaneo.
+  - Hooks globales de mouse/teclado y reproduccion mediante SendInput.
+  - Configuracion persistente via SQLite en `%APPDATA%\PyTask`.
 
-### ⏱ Sobre el ejecutable
-- Generado con `dotnet publish -c Release -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=false /p:PublishReadyToRun=true --self-contained true`.
-- **Primera ejecución**: tarda ~1–2 s (extrae las DLL nativas a la caché interna).
-- **A partir de la segunda**: arranque casi instantáneo (reutiliza caché).
-- No necesita instalar nada adicional; basta con `PyTask-v2.0.0.exe`.
+### Sobre el ejecutable
 
----
-
-## ✨ Características
-
-### 🎮 Modo de Entrada de Bajo Nivel (SendInput)
-- Funciona en aplicaciones/juegos que bloquean entrada sintética.
-- Activado por defecto (Prefs → “Modo Juegos (SendInput)”).
-- Eventos indistinguibles del hardware real.
-
-### ⚡ Interfaz optimizada
-- UI de 350x110 px con 5 botones e iconos HD.
-- Menús y estados instantáneos.
-- Hotkeys mostrados en tiempo real en la barra de estado y menú.
-
-### 🎬 Grabación/Reproducción
-- Captura precisa de mouse/teclado.
-- Velocidades: ½x, 1x, 2x, 100x, personalizada.
-- Modos: una vez, N veces, infinito o intervalo cada X segundos.
-
-### ⌨️ Hotkeys Globales
-- Predeterminado: **F9** grabar, **F10** reproducir.
-- Configurables (F5–F12).
-- Funcionan desde cualquier app.
-
-### 💾 Almacenamiento
-- Formato `.macro` (JSON) compatible con la versión Python.
-- Configuración en SQLite bajo `%APPDATA%\PyTask`.
-- Soporta ejecución portable o instalación.
+- El binario final es `PyTask.exe`.
+- Incluye icono, metadatos de version y manifest de Windows embebidos.
+- Esta pensado como portable: descargar, ejecutar y usar.
+- No realiza instalacion ni requiere permisos de administrador por defecto.
 
 ---
 
-## 🚀 Instalación
+## Caracteristicas
 
-### Versión Portable (recomendada)
-Descarga el release v2.0.0 y ejecuta `PyTask-v2.0.0.exe`. La primera vez puede tardar ~2 s; después es instantáneo.
+### Modo de Entrada de Bajo Nivel (SendInput)
 
-### Instalador (opcional)
-1. Ejecuta el publish anterior para poblar `bin/Release/.../publish`.
-2. Abre `Installer/PyTaskInstaller.iss` con Inno Setup.
-3. Compila y obtendrás `Installer/Output/PyTaskInstaller.exe`.
+- Activado por defecto desde Prefs -> `Modo Juegos (SendInput)`.
+- Mejora la compatibilidad con aplicaciones exigentes.
+- Evita regrabar eventos generados por el propio reproductor.
 
-### Desde el código fuente
+### Interfaz nativa y rapida
+
+- UI Win32 compacta inspirada en la interfaz original.
+- Botones Open, Save, Rec, Play y Prefs.
+- Menus con checks para opciones seleccionadas.
+- Barra de estado con hotkeys y mensajes temporales.
+
+### Grabacion/Reproduccion
+
+- Captura mouse, clicks, scroll y teclado.
+- Soporta combinaciones de teclas como `Shift + W`.
+- Velocidades: 0.5x, 1x, 2x, 100x y personalizada.
+- Modos: una vez, N veces, infinito e intervalos cada X segundos.
+- Detencion rapida de reproduccion desde el boton Play o hotkey.
+
+### Hotkeys Globales
+
+- Predeterminado: **F9** para grabar, **F10** para reproducir/detener.
+- Hotkey de grabacion configurable: F6, F7, F8, F9.
+- Hotkey de reproduccion configurable: F5, F10, F11, F12.
+
+### Almacenamiento
+
+- Formato `.macro` en JSON compatible con versiones anteriores.
+- Preferencias guardadas en `%APPDATA%\PyTask\pytask.db`.
+- Funciona como app portable sin instalador.
+
+---
+
+## Instalacion
+
+### Version Portable
+
+Descarga `PyTask.exe` desde Releases y ejecutalo directamente.
+
+### Desde el codigo fuente
+
 ```bash
 git clone https://github.com/4ismael1/PyTask.git
 cd PyTask
-
-# Restaurar y compilar
-dotnet restore
-dotnet build
-dotnet run
+cargo run
 ```
-**Requisitos**  
-- Windows 10/11 x64  
-- .NET SDK 9.0  
-- Visual Studio 2022 (o VS Code + C#)
+
+### Compilar release
+
+```bash
+cargo build --release
+```
+
+El ejecutable queda en:
+
+```text
+target/release/PyTask.exe
+```
+
+**Requisitos para compilar**
+
+- Windows 10/11 x64.
+- Rust estable con toolchain MSVC.
+- Visual Studio Build Tools o Windows SDK para recursos de Windows (`rc.exe` y `cvtres.exe`).
 
 ---
 
-## 📖 Uso
-
-### 🎮 Con apps exigentes
-1. Prefs (⚙) → “Modo Juegos (SendInput)” (ya viene ON).
-2. Graba con F9, reproduce con F10.
-3. Funciona incluso con anti-macros básicos.
+## Uso
 
 ### Grabar
-1. F9 o botón “Rec”.
-2. Ejecuta la secuencia.
-3. F9 para detener.
-4. Guarda con “Save”.
+
+1. Pulsa F9 o el boton `Rec`.
+2. Ejecuta la secuencia que quieres capturar.
+3. Pulsa F9 otra vez para detener.
+4. Guarda la macro con `Save`.
 
 ### Reproducir
+
 1. Abre una macro o graba una nueva.
-2. F10 o “Play”.
-3. Ajusta velocidad/modo desde el menú.
-4. F10 para detener.
+2. Pulsa F10 o `Play`.
+3. Ajusta velocidad/modo/intervalo desde `Prefs`.
+4. Pulsa F10 o `Play` otra vez para detener.
+
+### Apps exigentes
+
+1. Deja activo `Prefs -> Modo Juegos (SendInput)`.
+2. Graba con F9 y reproduce con F10.
+3. Si una app se ejecuta como administrador, ejecuta PyTask como administrador tambien.
 
 ---
 
-## 🛠️ Tecnologías
+## Tecnologias
 
-- Avalonia UI 11.3.8
-- CommunityToolkit.MVVM
-- Microsoft.Data.SQLite
-- Windows API (SendInput + hooks low-level)
+- Rust 2024.
+- Win32 API via `windows`.
+- `SendInput`, low-level keyboard hooks y low-level mouse hooks.
+- SQLite via `rusqlite` con SQLite embebido.
+- Recursos Windows generados desde `build.rs`.
 
 ---
 
-## 📊 Changelog
+## Changelog
+
+### [v3.0.0] - 2026-06-09
+
+- Reescritura de PyTask en Rust + Win32 UI.
+- Ejecutable portable sin runtime externo.
+- Interfaz compacta equivalente a la version anterior.
+- Reproduccion una vez, infinita, personalizada e intervalos.
+- Dialogos nativos para velocidad, repeticiones e intervalo.
+- Hotkeys globales configurables y persistentes.
+- Manifest, icono y metadatos de version embebidos en el exe.
+- Smoke test para validar carga/guardado de macros y preferencias.
 
 ### [v2.0.0] - 2025-11-08
-- Migración completa a C# + Avalonia UI (la versión Python queda en la rama `v1.0.0-python-legacy`).
-- Ejecutable single-file self-contained; la primera ejecución tarda ~1–2 s (extrae dependencias) y luego arranca al instante.
-- Hooks globales reforzados, hotkeys dinámicos en la UI y reproducción con soporte multi-monitor.
-- Configuración persistente mediante SQLite en `%APPDATA%\PyTask`.
-- Script de instalador oficial (Inno Setup) y documentación actualizada con instrucciones de publicación portable.
 
-### [v1.1.0] - 2025-10-29 (Python/PyQt6)
+- Migracion completa a C# + Avalonia UI.
+- Ejecutable single-file self-contained.
+- Hooks globales reforzados, hotkeys dinamicos y soporte multi-monitor.
+- Configuracion persistente mediante SQLite.
+
+### [v1.1.0] - 2025-10-29
+
 - Modo SendInput para mejor compatibilidad con juegos.
 - UI optimizada y mejoras de rendimiento.
-- Hotkeys dinámicos en mensajes y mejoras en textos.
+- Hotkeys dinamicos en mensajes y mejoras en textos.
 
 ### [v1.0.0] - 2025-10-28
-- Primera versión pública en Python/PyQt6.
+
+- Primera version publica en Python/PyQt6.
 
 ---
 
-## 📝 Notas
+## Notas
 
-- Ejecuta como administrador si los hotkeys no responden.
-- El modo SendInput está activo por defecto para máxima compatibilidad.
-- Coordenadas absolutas: soporta setups multi-monitor.
-- Usa la herramienta de forma ética.
+- Ejecuta como administrador si los hotkeys no responden dentro de una app elevada.
+- Las coordenadas absolutas soportan configuraciones multi-monitor.
+- Usa la herramienta de forma etica y respetando las reglas de cada aplicacion.
 
 ---
 
-## 🎨 Créditos
+## Creditos
 
 - Iconos: [Kiranshastry - Flaticon](https://www.flaticon.com/)
 - Desarrollador: [@4ismael1](https://github.com/4ismael1)
 
 ---
 
-## 📄 Licencia
+## Licencia
 
-MIT License © 2025 4ismael1
+MIT License (c) 2025 4ismael1
 
 ---
 
 <div align="center">
 
-**Hecho con ❤️ por [@4ismael1](https://github.com/4ismael1)**  
-⭐ Dale una estrella si este proyecto te fue útil
+**Hecho por [@4ismael1](https://github.com/4ismael1)**  
+Estrella el proyecto si te fue util.
 
 </div>
-
-
-

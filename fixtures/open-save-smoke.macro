@@ -1,0 +1,16 @@
+{
+  "events": [
+    {
+      "type": "mouse_move",
+      "timestamp": 0.0,
+      "x": 100,
+      "y": 100,
+      "button": null,
+      "pressed": null,
+      "dx": null,
+      "dy": null,
+      "key": null,
+      "vkCode": null
+    }
+  ]
+}
