@@ -5,7 +5,7 @@ use std::process::Command;
 
 fn main() {
     println!("cargo:rerun-if-changed=Cargo.toml");
-    println!("cargo:rerun-if-changed=assets/icons/portapapeles.ico");
+    println!("cargo:rerun-if-changed=assets/icons/pytask.ico");
 
     let Some(rc) = find_resource_compiler() else {
         println!(
@@ -117,7 +117,7 @@ fn windows_resource_source(version: &Version, manifest_path: &Path) -> String {
 #define RT_MANIFEST 24
 #define VS_VERSION_INFO 1
 
-IDI_PYTASK ICON "assets\\icons\\portapapeles.ico"
+IDI_PYTASK ICON "assets\\icons\\pytask.ico"
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "{manifest_path}"
 
 VS_VERSION_INFO VERSIONINFO
