@@ -4,7 +4,7 @@
 
 <img src="assets/logo/pytask-icon.svg" alt="PyTask logo" width="96" height="96">
 
-![PyTask](https://img.shields.io/badge/PyTask-v3.0.1-blue?style=for-the-badge)
+![PyTask](https://img.shields.io/badge/PyTask-v3.0.2-blue?style=for-the-badge)
 ![Rust](https://img.shields.io/badge/Rust-Win32_UI-orange?style=for-the-badge&logo=rust)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey?style=for-the-badge&logo=windows)
@@ -13,7 +13,7 @@
 **A native Rust + Win32 UI rewrite of PyTask.**  
 **Built for apps and games that require low-level input playback.**
 
-[![Download](https://img.shields.io/badge/Download-PyTask%20v3.0.1-brightgreen?style=for-the-badge&logo=windows)](https://github.com/4ismael1/PyTask/releases/tag/v3.0.1)
+[![Download](https://img.shields.io/badge/Download-PyTask%20v3.0.2-brightgreen?style=for-the-badge&logo=windows)](https://github.com/4ismael1/PyTask/releases/tag/v3.0.2)
 
 [Features](#features) - [Usage](#usage) - [Installation](#installation) - [Changelog](#changelog)
 
@@ -37,7 +37,7 @@
 
 - The Python/PyQt6 code remains available in the [`v1.0.0-python-legacy`](https://github.com/4ismael1/PyTask/tree/v1.0.0-python-legacy) branch.
 - The C# + Avalonia UI code remains available in the [`v2.0.0-csharp-legacy`](https://github.com/4ismael1/PyTask/tree/v2.0.0-csharp-legacy) branch.
-- The `main` branch contains PyTask **v3.0.1**, written in **Rust + Win32 UI**:
+- The `main` branch contains PyTask **v3.0.2**, written in **Rust + Win32 UI**:
   - Portable executable with no Python, .NET, or external runtime dependency.
   - Lightweight native interface with near-instant startup.
   - Global mouse/keyboard hooks and playback through SendInput.
@@ -65,7 +65,7 @@
 - Compact Win32 UI inspired by the original interface.
 - Open, Save, Rec, Play, and Prefs buttons.
 - Menus with checked options for current settings.
-- Status bar with hotkeys, temporary messages, and the PyTask app mark.
+- Status bar with hotkeys and temporary messages.
 
 ### Recording And Playback
 
@@ -159,11 +159,16 @@ target/release/PyTask.exe
 
 ## Changelog
 
+### [v3.0.2] - 2026-07-05
+
+- Removed the tiny status-bar logo because it was not readable at that size.
+- Kept the new app icon for the executable and README branding.
+
 ### [v3.0.1] - 2026-07-05
 
 - Added the new black-and-white PyTask app icon.
 - Embedded the new icon in `PyTask.exe`.
-- Added the PyTask mark inside the app status bar.
+- Added the new PyTask logo to the README.
 - Translated the README to English and added the logo at the top.
 
 ### [v3.0.0] - 2026-06-09

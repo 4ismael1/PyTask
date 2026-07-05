@@ -64,7 +64,6 @@ const BASE_BUTTON_Y: i32 = 7;
 const BASE_BUTTON_GAP: i32 = 7;
 const BASE_BUTTON_X: i32 = 11;
 const BASE_ICON_SIZE: i32 = 26;
-const BASE_STATUS_ICON_SIZE: i32 = 14;
 const UI_DPI_SCALE_WEIGHT: f64 = 0.5;
 const WM_HOTKEY_RECORD: u32 = WM_APP + 1;
 const WM_HOTKEY_PLAY: u32 = WM_APP + 2;
@@ -77,7 +76,6 @@ const ID_DIALOG_CANCEL: usize = 2;
 const ICON_SMALL_ID: usize = 0;
 const ICON_BIG_ID: usize = 1;
 const APP_ICON_RESOURCE_ID: usize = 1;
-const APP_LOGO_ICON_INDEX: usize = 5;
 const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 static UI_SCALE: OnceLock<f64> = OnceLock::new();
@@ -170,7 +168,6 @@ impl AppState {
             load_png(include_bytes!("../assets/icons/boton-detener.png")),
             load_png(include_bytes!("../assets/icons/Play.png")),
             load_png(include_bytes!("../assets/icons/preferencias.png")),
-            load_png(include_bytes!("../assets/icons/pytask-logo.png")),
         ];
 
         Self {
@@ -1980,7 +1977,7 @@ unsafe fn paint(hwnd: HWND, state: &AppState) {
     draw_background(mem_dc);
     draw_buttons(mem_dc, state);
     if state.settings.show_captions {
-        draw_status(mem_dc, state);
+        draw_status(mem_dc, &state.status);
     }
 
     let _ = BitBlt(hdc, 0, 0, client_w(), client_h(), mem_dc, 0, 0, SRCCOPY);
@@ -2095,7 +2092,7 @@ unsafe fn draw_buttons(hdc: HDC, state: &AppState) {
     }
 }
 
-unsafe fn draw_status(hdc: HDC, state: &AppState) {
+unsafe fn draw_status(hdc: HDC, status: &str) {
     fill_rect(
         hdc,
         RECT {
@@ -2106,21 +2103,11 @@ unsafe fn draw_status(hdc: HDC, state: &AppState) {
         },
         rgb(0xd0, 0xd0, 0xd0),
     );
-    let logo_size = ui(BASE_STATUS_ICON_SIZE);
-    draw_icon(
-        hdc,
-        &state.icons[APP_LOGO_ICON_INDEX],
-        ui(5),
-        status_y() + ui(3),
-        logo_size,
-        rgb(0xff, 0xff, 0xff),
-        1.0,
-    );
     draw_label(
         hdc,
-        &state.status,
+        status,
         RECT {
-            left: ui(24),
+            left: ui(5),
             top: status_y() + ui(2),
             right: client_w() - ui(5),
             bottom: client_h(),
